@@ -18,14 +18,6 @@ public class Cell
         this.B = b;
     }
 
-    public void SetColor(byte r, byte g, byte b)
-    {
-        this.R = r;
-        this.G = g;
-        this.B = b;
-    }
-
-
     public Cell Copy()
     {
         return new Cell(this.R, this.G, this.B);
