@@ -78,9 +78,9 @@ namespace MosersGameOfLife
             {
                 for (int j = 0; j < rows; j++)
                 {
-                    var cellValue = _grid.Cells[i, j];
+                    var cell = _grid.Cells[i, j];
                     var rectangle = _rectangles[i * rows + j];
-                    rectangle.Fill = cellValue == 1 ? Brushes.Black : Brushes.White;
+                    rectangle.Fill = cell.IsAlive() ? new SolidColorBrush(cell.GetColor()) : Brushes.White; // Dead cells are white
                 }
             }
         }

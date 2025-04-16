@@ -4,46 +4,58 @@
     {
         private int Cols { get; set; }
         private int Rows { get; set; }
-        public byte[,] Cells { get; set; }
-        private byte[,] Buffer { get; set; } // Reusable buffer for the new state
+        public Cell[,] Cells { get; set; }
 
         public Grid(int cols, int rows)
         {
             this.Cols = cols;
             this.Rows = rows;
-            this.Cells = new byte[cols, rows];
-            this.Buffer = new byte[cols, rows]; // Initialize the buffer
+            this.Cells = new Cell[cols, rows];
+
+            // Initialize the Cells with independent Cell objects
+            for (var i = 0; i < cols; i++)
+            {
+                for (var j = 0; j < rows; j++)
+                {
+                    this.Cells[i, j] = new Cell();
+                }
+            }
         }
 
         public void Update()
         {
-            // Iterate through each cell
+            // Calculate the next state for each cell
             for (var i = 0; i < this.Cols; i++)
             {
                 for (var j = 0; j < this.Rows; j++)
                 {
-                    // Count the number of alive neighbors
-                    var state = this.Cells[i, j];
+                    var cell = this.Cells[i, j];
                     var aliveNeighbors = CountAliveNeighbors(i, j);
 
                     // Apply the rules of the game
-                    if (state == 0 && aliveNeighbors == 3)
+                    if (cell.IsDead() && aliveNeighbors == 3)
                     {
-                        Buffer[i, j] = 1; // Cell becomes alive
+                        cell.SetAlive(); // Cell becomes alive
                     }
-                    else if (state == 1 && (aliveNeighbors < 2 || aliveNeighbors > 3))
+                    else if (cell.IsAlive() && (aliveNeighbors < 2 || aliveNeighbors > 3))
                     {
-                        Buffer[i, j] = 0; // Cell dies
+                        cell.SetDead(); // Cell dies
                     }
                     else
                     {
-                        Buffer[i, j] = state; // Cell remains the same
+                        cell.SetState(cell.GetState()); // Cell remains the same
                     }
                 }
             }
 
-            // Swap the buffers (reuse memory)
-            (this.Buffer, this.Cells) = (this.Cells, this.Buffer);
+            // Commit the next state for all cells
+            for (var i = 0; i < this.Cols; i++)
+            {
+                for (var j = 0; j < this.Rows; j++)
+                {
+                    this.Cells[i, j].CommitState();
+                }
+            }
         }
 
         private int CountAliveNeighbors(int x, int y)
@@ -62,7 +74,10 @@
                     var newY = (y + j + this.Rows) % this.Rows;
 
                     // Count the neighbor
-                    aliveCount += this.Cells[newX, newY];
+                    if (this.Cells[newX, newY].IsAlive())
+                    {
+                        aliveCount++;
+                    }
                 }
             }
 
@@ -72,14 +87,14 @@
         public static Grid GetRandomGrid(int cols, int rows)
         {
             var grid = new Grid(cols, rows);
-            var random = new Random();
             for (var i = 0; i < cols; i++)
             {
                 for (var j = 0; j < rows; j++)
                 {
-                    grid.Cells[i, j] = (byte)random.Next(0, 2);
+                    grid.Cells[i, j] = Cell.GetRandomCell();
                 }
             }
+
             return grid;
         }
     }
