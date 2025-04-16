@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using MosersGameOfLife.src;
@@ -13,6 +14,7 @@ namespace MosersGameOfLife
         private Grid _grid;
         private DispatcherTimer _timer;
         private Rectangle[] _rectangles; // 1D array to store UI elements
+        private WriteableBitmap _bitmap;
 
         public MainWindow()
         {
@@ -43,24 +45,31 @@ namespace MosersGameOfLife
             int cols = _grid.Cells.GetLength(0);
             int rows = _grid.Cells.GetLength(1);
 
-            // Set UniformGrid rows and columns
+            // Initialize the _rectangles array
+            _rectangles = new Rectangle[cols * rows];
+
+            // Clear the UI and set up a uniform grid
+            GridDisplay.Children.Clear();
             GridDisplay.Rows = rows;
             GridDisplay.Columns = cols;
 
-            // Create the rectangles once and store them in a 1D array
-            _rectangles = new Rectangle[cols * rows];
             for (int i = 0; i < cols; i++)
             {
                 for (int j = 0; j < rows; j++)
                 {
+                    // Create a new rectangle for each cell
                     var rectangle = new Rectangle
                     {
-                        Fill = Brushes.White,
-                        Stroke = Brushes.Gray, // Optional: Add a border
+                        Width = double.NaN, // Adjust size as needed
+                        Height = double.NaN,
+                        Fill = Brushes.White, // Default color
+                        Stroke = Brushes.Gray, // Optional border
                         StrokeThickness = 0.5
                     };
-                    _rectangles[i * rows + j] = rectangle;
+
+                    // Add the rectangle to the UI and the array
                     GridDisplay.Children.Add(rectangle);
+                    _rectangles[i * rows + j] = rectangle;
                 }
             }
         }

@@ -1,10 +1,15 @@
-﻿public class Cell
+﻿using System.Windows.Media;
+
+public class Cell
 {
     private byte R { get; set; }
     private byte G { get; set; }
     private byte B { get; set; }
 
-    public System.Windows.Media.Color GetColor() => System.Windows.Media.Color.FromRgb(R, G, B); // Get the color of the cell
+    public Color GetColor()
+    {
+        return Color.FromRgb(R, G, B);
+    }
 
     public Cell(byte r, byte g, byte b)
     {

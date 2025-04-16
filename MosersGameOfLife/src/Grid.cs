@@ -17,41 +17,28 @@
 
         public void Update()
         {
-            // Phase 1: Calculate the next state and store it in the buffer
-            for (var i = 0; i < this.Cols; i++)
+            (Buffer, Cells) = (Cells, Buffer);
+            Parallel.For(0, Cols, i =>
             {
-                for (var j = 0; j < this.Rows; j++)
+                for (var j = 0; j < Rows; j++)
                 {
-                    Cell? cell = this.Cells[i, j];
+                    Cell? cell = Cells[i, j];
                     int aliveNeighbors = CountAliveNeighbors(i, j);
 
-                    // Apply the rules of the game
                     if (cell == null && aliveNeighbors == 3)
                     {
-                        // Create a new cell with the average color of its neighbors
-                        this.Buffer[i, j] = CreateCellWithAverageColor(i, j);
+                        Buffer[i, j] = CreateCellWithAverageColor(i, j);
                     }
                     else if (cell != null && (aliveNeighbors < 2 || aliveNeighbors > 3))
                     {
-                        // Cell dies (set to null)
-                        this.Buffer[i, j] = null;
+                        Buffer[i, j] = null;
                     }
                     else
                     {
-                        // Cell remains the same
-                        this.Buffer[i, j] = cell?.Copy();
+                        Buffer[i, j] = cell;
                     }
                 }
-            }
-
-            // Phase 2: Commit the buffer to the main grid
-            for (var i = 0; i < this.Cols; i++)
-            {
-                for (var j = 0; j < this.Rows; j++)
-                {
-                    this.Cells[i, j] = this.Buffer[i, j];
-                }
-            }
+            });
         }
 
         private int CountAliveNeighbors(int x, int y)
@@ -66,12 +53,10 @@
                     if (i == 0 && j == 0) continue; // Skip the cell itself
 
                     // Calculate wrapped coordinates
-                    var newX = (x + i + this.Cols) % this.Cols;
-                    var newY = (y + j + this.Rows) % this.Rows;
+                    int newX = (x + i + this.Cols) % this.Cols;
+                    int newY = (y + j + this.Rows) % this.Rows;
 
-                    Cell? cell = this.Cells[newX, newY];
-
-                    if (cell != null)
+                    if (this.Cells[newX, newY] != null)
                     {
                         aliveCount++;
                     }

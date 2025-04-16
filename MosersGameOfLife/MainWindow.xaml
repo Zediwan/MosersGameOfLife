@@ -13,7 +13,7 @@
 
         <!-- Grid display -->
         <ScrollViewer Grid.Row="1">
-            <UniformGrid x:Name="GridDisplay" Rows="10" Columns="10" />
+            <UniformGrid x:Name="GridDisplay" />
         </ScrollViewer>
     </Grid>
 </Window>
