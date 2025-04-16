@@ -1,27 +1,33 @@
 ﻿public class Cell
 {
-    private byte State { get; set; } // Current state
-    private byte NextState { get; set; } // Next state
+    private byte R { get; set; }
+    private byte G { get; set; }
+    private byte B { get; set; }
 
-    public bool IsAlive() => State == 1;
-    public bool IsDead() => State == 0;
+    public System.Windows.Media.Color GetColor() => System.Windows.Media.Color.FromRgb(R, G, B); // Get the color of the cell
 
-    public void SetAlive() => NextState = 1;
-    public void SetDead() => NextState = 0;
+    public Cell(byte r, byte g, byte b)
+    {
+        this.R = r;
+        this.G = g;
+        this.B = b;
+    }
 
-    public byte GetState() => State;
-    public void SetState(byte state) => State = state;
+    public void SetColor(byte r, byte g, byte b)
+    {
+        this.R = r;
+        this.G = g;
+        this.B = b;
+    }
 
-    public System.Windows.Media.Color GetColor() =>
-        IsAlive() ? System.Windows.Media.Colors.Black : System.Windows.Media.Colors.White;
 
-    public void CommitState() => State = NextState; // Commit the next state to the current state
-
-    public Cell Copy() => new Cell { State = this.State };
+    public Cell Copy()
+    {
+        return new Cell(this.R, this.G, this.B);
+    }
 
     public static Cell GetRandomCell()
     {
-        var random = new Random();
-        return new Cell { State = (byte)random.Next(0, 2) };
+        return new Cell((byte)new Random().Next(0, 256), (byte)new Random().Next(0, 256), (byte)new Random().Next(0, 256));
     }
 }

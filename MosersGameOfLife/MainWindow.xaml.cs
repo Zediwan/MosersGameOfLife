@@ -23,7 +23,7 @@ namespace MosersGameOfLife
         private void InitializeGame()
         {
             // Initialize the grid
-            int cols = 20, rows = 20; // Adjust as needed
+            int cols = 50, rows = 50; // Adjust as needed
             _grid = Grid.GetRandomGrid(cols, rows);
 
             // Initialize the UI
@@ -78,9 +78,9 @@ namespace MosersGameOfLife
             {
                 for (int j = 0; j < rows; j++)
                 {
-                    var cell = _grid.Cells[i, j];
+                    Cell? cell = _grid.Cells[i, j];
                     var rectangle = _rectangles[i * rows + j];
-                    rectangle.Fill = cell.IsAlive() ? new SolidColorBrush(cell.GetColor()) : Brushes.White; // Dead cells are white
+                    rectangle.Fill = cell != null ? new SolidColorBrush(cell.GetColor()) : Brushes.White; // Set color based on cell state
                 }
             }
         }

@@ -1,7 +1,7 @@
 ﻿<Window x:Class="MosersGameOfLife.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Game of Life" Height="450" Width="800">
+        Title="Game of Life" Height="1000" Width="1000">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
