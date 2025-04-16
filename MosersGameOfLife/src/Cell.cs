@@ -2,16 +2,25 @@
 
 public class Cell
 {
-    private byte R { get; set; }
-    private byte G { get; set; }
-    private byte B { get; set; }
+    public byte R { get; set; }
+    public byte G { get; set; }
+    public byte B { get; set; }
+    public bool IsAlive { get; set; } // State of the cell
+
+    public Cell(byte r, byte g, byte b, bool isAlive = false)
+    {
+        this.R = r;
+        this.G = g;
+        this.B = b;
+        this.IsAlive = isAlive;
+    }
 
     public Color GetColor()
     {
-        return Color.FromRgb(R, G, B);
+        return IsAlive ? Color.FromRgb(R, G, B) : Colors.White;
     }
 
-    public Cell(byte r, byte g, byte b)
+    public void SetColor(byte r, byte g, byte b)
     {
         this.R = r;
         this.G = g;
@@ -20,11 +29,17 @@ public class Cell
 
     public Cell Copy()
     {
-        return new Cell(this.R, this.G, this.B);
+        return new Cell(this.R, this.G, this.B, this.IsAlive);
     }
 
     public static Cell GetRandomCell()
     {
-        return new Cell((byte)new Random().Next(0, 256), (byte)new Random().Next(0, 256), (byte)new Random().Next(0, 256));
+        Random random = new Random();
+        return new Cell(
+            (byte)random.Next(256), // Random Red
+            (byte)random.Next(256), // Random Green
+            (byte)random.Next(256), // Random Blue
+            random.NextDouble() < 0.1 // 50% chance to be alive
+        );
     }
 }

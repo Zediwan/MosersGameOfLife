@@ -14,7 +14,6 @@ namespace MosersGameOfLife
         private Grid _grid;
         private DispatcherTimer _timer;
         private Rectangle[] _rectangles; // 1D array to store UI elements
-        private WriteableBitmap _bitmap;
 
         public MainWindow()
         {
@@ -87,9 +86,9 @@ namespace MosersGameOfLife
             {
                 for (int j = 0; j < rows; j++)
                 {
-                    Cell? cell = _grid.Cells[i, j];
+                    Cell cell = _grid.Cells[i, j];
                     var rectangle = _rectangles[i * rows + j];
-                    rectangle.Fill = cell != null ? new SolidColorBrush(cell.GetColor()) : Brushes.White; // Set color based on cell state
+                    rectangle.Fill = new SolidColorBrush(cell.GetColor());
                 }
             }
         }
