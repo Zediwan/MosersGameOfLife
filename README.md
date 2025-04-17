@@ -66,14 +66,17 @@ The following screenshots showcase key features of Moser's Game of Life:
 
 ### Color Behavior Modes
 *Different color behavior modes in action*
+#### Default
 ![Color Modes](./assets/images/color-modes-default.png)
 *Default color behavior without trails*
 ![Color Modes](./assets/images/color-modes-default-trail.png)
 *Default color behavior with trails*
+#### Majority
 ![Color Modes](./assets/images/color-modes-majority.png)
 *Majority color behavior without trails*
 ![Color Modes](./assets/images/color-modes-majority-trail.png)
 *Majority color behavior with trails*
+#### Average
 ![Color Modes](./assets/images/color-modes-average.png)
 *Average color behavior without trails*
 ![Color Modes](./assets/images/color-modes-average-trail.png)
