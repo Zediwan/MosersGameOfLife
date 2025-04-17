@@ -54,7 +54,7 @@ namespace MosersGameOfLife
             _rulesetManager = new RulesetManager();
 
             // Initialize the first paint color
-            GenerateNewPaintColor();
+            GenerateDefaultPaintColor();
 
             // Initialize non-nullable fields
             _grid = new Grid(50, 50); // Default grid dimensions
@@ -64,6 +64,17 @@ namespace MosersGameOfLife
 
             InitializeGame();
             InitializeRulesetUI();
+        }
+
+        /// <summary>
+        /// Generates a consistent default color for painting cells.
+        /// </summary>
+        private void GenerateDefaultPaintColor()
+        {
+            // Set a consistent default color (e.g., green)
+            _currentPaintR = 0;
+            _currentPaintG = 255;
+            _currentPaintB = 0;
         }
 
         /// <summary>
@@ -220,17 +231,13 @@ namespace MosersGameOfLife
             _currentPaintB = (byte)(_random.Next(128) + 64);
         }
 
-        #endregion
-
-        #region Mouse Interaction for Cell Painting
-
         /// <summary>
         /// Handles mouse down on a specific cell rectangle.
         /// </summary>
         private void Rectangle_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            // Generate a new color when starting a new paint stroke
-            if (!_isMouseDown && _paintAliveState)
+            // Generate a new color only when not in the default mode
+            if (!_isMouseDown && _paintAliveState && Grid.ColorBehavior != ColorBehaviorMode.Default)
             {
                 GenerateNewPaintColor();
             }
@@ -264,8 +271,8 @@ namespace MosersGameOfLife
         /// </summary>
         private void GridDisplay_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            // Generate a new color when starting a new paint stroke
-            if (!_isMouseDown && _paintAliveState)
+            // Generate a new color only when not in the default mode
+            if (!_isMouseDown && _paintAliveState && Grid.ColorBehavior != ColorBehaviorMode.Default)
             {
                 GenerateNewPaintColor();
             }
@@ -738,7 +745,6 @@ namespace MosersGameOfLife
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         #endregion
     }
 }
