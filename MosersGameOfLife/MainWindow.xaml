@@ -56,13 +56,18 @@
                                   SelectionChanged="RulesetComboBox_SelectionChanged" />
                         <TextBlock x:Name="RulesetDescriptionText" Text="Description will appear here" 
                                    TextWrapping="Wrap" Margin="0,5" FontStyle="Italic" />
-                        <TextBox x:Name="RulesetNameTextBox" Margin="0,5" />
+                        <TextBox x:Name="RulesetNameTextBox" Margin="0,5" 
+                                 TextChanged="RulesetNameTextBox_TextChanged" />
                         <StackPanel Orientation="Horizontal" Margin="0,5">
-                            <Button Content="Save" Width="60" Margin="0,0,5,0" 
+                            <Button x:Name="SaveButton" Content="Save" Width="60" Margin="0,0,5,0" 
                                     Click="SaveRuleset_Click" />
-                            <Button Content="Delete" Width="60" 
+                            <Button x:Name="DeleteButton" Content="Delete" Width="60" 
                                     Click="DeleteRuleset_Click" />
                         </StackPanel>
+                        <TextBlock x:Name="SaveInfoText" Text="" 
+                                   Foreground="Red" FontStyle="Italic" 
+                                   Margin="0,5" Visibility="Collapsed" 
+                                   TextWrapping="Wrap" MaxWidth="280" />
 
                         <!-- Rule Editor -->
                         <TextBlock Text="Edit Rules" FontWeight="Bold" FontSize="14" Margin="0,10,0,5" />
