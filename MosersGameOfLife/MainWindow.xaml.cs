@@ -16,6 +16,9 @@ namespace MosersGameOfLife
         private bool _isTrailEnabled;
         private RulesetManager _rulesetManager;
         private bool _updatingCheckboxes = false;
+        private bool _isMouseDown = false;
+        private bool _paintAliveState = true; // true = paint alive cells, false = paint dead cells
+        private CheckBox _paintToggleButton;
 
         public MainWindow()
         {
@@ -90,18 +93,146 @@ namespace MosersGameOfLife
                         Width = double.NaN, // Adjust size as needed
                         Height = double.NaN,
                         Fill = Brushes.Black, // Default color
-                        StrokeThickness = 0.5
+                        StrokeThickness = 0.5,
+                        Tag = new Point(i, j) // Store the cell coordinates in the Tag property
                     };
+
+                    // Add the event handlers for mouse interaction
+                    rectangle.MouseDown += Rectangle_MouseDown;
+                    rectangle.MouseEnter += Rectangle_MouseEnter;
+                    rectangle.MouseUp += Rectangle_MouseUp;
 
                     // Add the rectangle to the UI and the array
                     GridDisplay.Children.Add(rectangle);
                     _rectangles[i * rows + j] = rectangle;
                 }
             }
+
+            // Add mouse event handlers to the grid display
+            GridDisplay.MouseDown += GridDisplay_MouseDown;
+            GridDisplay.MouseUp += GridDisplay_MouseUp;
+            GridDisplay.MouseLeave += GridDisplay_MouseLeave;
+        }
+
+        private void Rectangle_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            _isMouseDown = true;
+            ToggleCellState((Rectangle)sender);
+            e.Handled = true;
+        }
+
+        private void Rectangle_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (_isMouseDown)
+            {
+                ToggleCellState((Rectangle)sender);
+            }
+        }
+
+        private void Rectangle_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            _isMouseDown = false;
+        }
+
+        private void GridDisplay_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            _isMouseDown = true;
+        }
+
+        private void GridDisplay_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            _isMouseDown = false;
+        }
+
+        private void GridDisplay_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            _isMouseDown = false;
+        }
+
+        private void ToggleCellState(Rectangle rectangle)
+        {
+            if (rectangle.Tag is Point point)
+            {
+                int i = (int)point.X;
+                int j = (int)point.Y;
+
+                // Set the cell state based on the paint mode
+                if (_paintAliveState)
+                {
+                    // Determine the color based on the current color behavior
+                    byte r = 0, g = 0, b = 0;
+                    if (Grid.ColorBehavior == ColorBehaviorMode.Default)
+                    {
+                        r = 0;
+                        g = 255;
+                        b = 0;
+                    }
+                    else
+                    {
+                        // For other modes, use white
+                        r = 255;
+                        g = 255;
+                        b = 255;
+                    }
+
+                    // Paint alive cell with appropriate color
+                    _grid.SetCellState(i, j, true, r, g, b);
+
+                    // Update the UI
+                    rectangle.Fill = new SolidColorBrush(_grid.Cells[i, j].GetColor());
+                }
+                else
+                {
+                    // Paint dead cell
+                    if (_isTrailEnabled)
+                    {
+                        // With trail - keep some color but mark as dead
+                        _grid.SetCellState(i, j, false, _grid.Cells[i, j].R, _grid.Cells[i, j].G, _grid.Cells[i, j].B, 254);
+                    }
+                    else
+                    {
+                        // No trail - completely black
+                        _grid.SetCellState(i, j, false, 0, 0, 0, 0);
+                    }
+
+                    // Update the UI
+                    rectangle.Fill = _isTrailEnabled && _grid.Cells[i, j].HasTrail ?
+                        new SolidColorBrush(_grid.Cells[i, j].GetColor()) : Brushes.Black;
+                }
+            }
+        }
+
+        private void PaintToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            _paintAliveState = true;
+        }
+
+        private void PaintToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _paintAliveState = false;
+        }
+
+        private bool _isPaused = false;
+        private void PauseButton_Click(object sender, RoutedEventArgs e)
+        {
+            _isPaused = !_isPaused;
+
+            if (_isPaused)
+            {
+                _timer.Stop();
+                ((Button)sender).Content = "Resume";
+            }
+            else
+            {
+                _timer.Start();
+                ((Button)sender).Content = "Pause";
+            }
         }
 
         private void UpdateGrid()
         {
+            if (_isPaused) return;
+
             // Update the grid state
             _grid.Update();
 

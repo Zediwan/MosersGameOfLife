@@ -205,5 +205,28 @@
 
             return grid;
         }
+
+        public void SetCellState(int i, int j, bool isAlive, byte r, byte g, byte b, byte a = 255)
+        {
+            // Ensure coordinates are within bounds
+            if (i >= 0 && i < Cols && j >= 0 && j < Rows)
+            {
+                // Update the cell in the current state
+                if (isAlive)
+                {
+                    Cells[i, j].ComeAlive();
+                    Cells[i, j].SetColor(r, g, b, a);
+                }
+                else
+                {
+                    Cells[i, j].Die();
+                    Cells[i, j].SetColor(r, g, b, a);
+                }
+
+                // Also update the buffer to ensure the change persists through the next update
+                Buffer[i, j] = Cells[i, j].Copy();
+            }
+        }
+
     }
 }

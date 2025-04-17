@@ -11,7 +11,10 @@
                    HorizontalAlignment="Right" VerticalAlignment="Top" 
                    Margin="10" Width="250">
            <Button Content="Generate New World" Click="GenerateNewGrid_Click" Margin="0,5" />
-           <ComboBox x:Name="ColorBehaviorComboBox" SelectionChanged="ColorBehaviorComboBox_SelectionChanged" SelectedIndex="0" Margin="0,5">
+           <CheckBox x:Name="PaintToggleCheckBox" Content="Paint Alive Cells" 
+                     IsChecked="True" Checked="PaintToggle_Checked" Unchecked="PaintToggle_Unchecked"/>
+           <Button Content="Pause" x:Name="PauseButton" Click="PauseButton_Click" Margin="10,0,0,0" Width="60"/>
+            <ComboBox x:Name="ColorBehaviorComboBox" SelectionChanged="ColorBehaviorComboBox_SelectionChanged" SelectedIndex="0" Margin="0,5">
                <ComboBoxItem Content="Default" Tag="Default" />
                <ComboBoxItem Content="Majority Color" Tag="MajorityColor" />
                <ComboBoxItem Content="Average Color" Tag="AverageColor" />
