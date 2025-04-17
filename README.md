@@ -64,13 +64,20 @@ The following screenshots showcase key features of Moser's Game of Life:
 ![Main Interface](./assets/images/main-interface.png)
 *The main simulation screen showing the cellular automaton in action*
 
-### Rule Editor
-![Rule Editor](./assets/images/rule-editor.png)
-*Custom rule creation interface with B/S notation*
-
 ### Color Behavior Modes
-![Color Modes](./assets/images/color-modes.png)
 *Different color behavior modes in action*
+![Color Modes](./assets/images/color-modes-default.png)
+*Default color behavior without trails*
+![Color Modes](./assets/images/color-modes-default-trail.png)
+*Default color behavior with trails*
+![Color Modes](./assets/images/color-modes-majority.png)
+*Majority color behavior without trails*
+![Color Modes](./assets/images/color-modes-majority-trail.png)
+*Majority color behavior with trails*
+![Color Modes](./assets/images/color-modes-average.png)
+*Average color behavior without trails*
+![Color Modes](./assets/images/color-modes-average.trail.png)
+*Average color behavior with trails*
 
 ## Technical Details
 - Built with C# and WPF
