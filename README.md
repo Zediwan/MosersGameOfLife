@@ -1,5 +1,17 @@
 # Moser's Game of Life
 
+[![Latest Release](https://img.shields.io/github/v/release/Zediwan/MosersGameOfLife?style=flat-square)](https://github.com/Zediwan/MosersGameOfLife/releases)
+
+## 🔽 Download
+
+➡️ [Download the latest version](https://github.com/Zediwan/MosersGameOfLife/releases/latest)
+
+After installation, a shortcut will appear on your Desktop and Start Menu.
+
+No .NET installation required — it's fully self-contained! 🎉
+
+---
+
 ## Overview
 
 A modern implementation of Conway's Game of Life cellular automaton. This project simulates the evolution of a grid of cells based on a set of simple rules, resulting in complex emergent behaviors.
