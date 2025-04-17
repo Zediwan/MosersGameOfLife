@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using MosersGameOfLife.src;
@@ -62,8 +61,7 @@ namespace MosersGameOfLife
                     {
                         Width = double.NaN, // Adjust size as needed
                         Height = double.NaN,
-                        Fill = Brushes.White, // Default color
-                        Stroke = Brushes.Gray, // Optional border
+                        Fill = Brushes.Black, // Default color
                         StrokeThickness = 0.5
                     };
 
@@ -103,7 +101,7 @@ namespace MosersGameOfLife
                     else
                     {
                         // Render dead cells as white
-                        rectangle.Fill = Brushes.White;
+                        rectangle.Fill = Brushes.Black;
                     }
                 }
             }
@@ -138,8 +136,8 @@ namespace MosersGameOfLife
                         Grid.ColorBehavior = ColorBehaviorMode.AverageColor;
                         break;
 
-                    case "BlackAndWhite":
-                        Grid.ColorBehavior = ColorBehaviorMode.BlackAndWhite;
+                    case "Default":
+                        Grid.ColorBehavior = ColorBehaviorMode.Default;
                         break;
                 }
             }
@@ -153,6 +151,42 @@ namespace MosersGameOfLife
         private void TrailCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             _isTrailEnabled = false;
+        }
+
+        private void RuleCheckbox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox checkbox)
+            {
+                if (_grid == null) return;
+
+                int rule = int.Parse(checkbox.Content.ToString());
+                if (checkbox.Name.StartsWith("B"))
+                {
+                    _grid.BirthRules.Add(rule);
+                }
+                else if (checkbox.Name.StartsWith("S"))
+                {
+                    _grid.SurvivalRules.Add(rule);
+                }
+            }
+        }
+
+        private void RuleCheckbox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox checkbox)
+            {
+                if (_grid == null) return;
+
+                int rule = int.Parse(checkbox.Content.ToString());
+                if (checkbox.Name.StartsWith("B"))
+                {
+                    _grid.BirthRules.Remove(rule);
+                }
+                else if (checkbox.Name.StartsWith("S"))
+                {
+                    _grid.SurvivalRules.Remove(rule);
+                }
+            }
         }
     }
 }

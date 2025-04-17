@@ -5,7 +5,7 @@
     {
         MajorityColor,
         AverageColor,
-        BlackAndWhite
+        Default
     }
 
     public class Grid
@@ -14,7 +14,10 @@
         private int Rows { get; set; }
         public Cell[,] Cells { get; set; }
         private Cell[,] Buffer { get; set; } // Buffer for the next state
-        public static ColorBehaviorMode ColorBehavior { get; set; } = ColorBehaviorMode.BlackAndWhite;
+        public static ColorBehaviorMode ColorBehavior { get; set; } = ColorBehaviorMode.Default;
+        public HashSet<int> BirthRules { get; set; } = new HashSet<int> { 3 }; // Default: B3
+        public HashSet<int> SurvivalRules { get; set; } = new HashSet<int> { 2, 3 }; // Default: S23
+
 
         public Grid(int cols, int rows)
         {
@@ -46,7 +49,7 @@
             byte newR = 0, newG = 0, newB = 0;
 
             // Performance optimization: only calculate colors when needed
-            if (ColorBehavior == ColorBehaviorMode.BlackAndWhite)
+            if (ColorBehavior == ColorBehaviorMode.Default)
             {
                 aliveNeighbors = CountAliveNeighbors(i, j);
             }
@@ -59,21 +62,17 @@
                 newB = result.avgB;
             }
 
-            if (!cell.IsAlive && aliveNeighbors == 3)
+            if (!cell.IsAlive && BirthRules.Contains(aliveNeighbors))
             {
                 // Birth rule
                 Buffer[i, j].ComeAlive();
                 ApplyColorByBehavior(Buffer[i, j], newR, newG, newB);
             }
-            else if (cell.IsAlive && (aliveNeighbors < 2 || aliveNeighbors > 3))
+            else if (cell.IsAlive && !SurvivalRules.Contains(aliveNeighbors))
             {
                 // Death rule
                 Buffer[i, j].Die();
-                // For trail colors in BlackAndWhite mode, we might want a different approach
-                if (ColorBehavior == ColorBehaviorMode.BlackAndWhite)
-                    Buffer[i, j].SetColor(0, 0, 0, 200); // Black trail
-                else
-                    Buffer[i, j].SetColor(cell.R, cell.G, cell.B, 200); // Colored trail
+                Buffer[i, j].SetColor(cell.R, cell.G, cell.B, 254); // Colored trail
             }
             else
             {
@@ -90,8 +89,8 @@
         {
             switch (ColorBehavior)
             {
-                case ColorBehaviorMode.BlackAndWhite:
-                    cell.SetColor(0, 0, 0);
+                case ColorBehaviorMode.Default:
+                    cell.SetColor(0, 255, 0);
                     break;
                 case ColorBehaviorMode.MajorityColor:
                 case ColorBehaviorMode.AverageColor:
@@ -198,7 +197,7 @@
             {
                 for (var j = 0; j < rows; j++)
                 {
-                    Cell cell = Cell.GetRandomCell(Grid.ColorBehavior == ColorBehaviorMode.BlackAndWhite);
+                    Cell cell = Cell.GetRandomCell(Grid.ColorBehavior == ColorBehaviorMode.Default);
                     grid.Cells[i, j] = cell;
                     grid.Buffer[i, j] = cell;
                 }

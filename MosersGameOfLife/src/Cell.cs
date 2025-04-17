@@ -63,6 +63,9 @@ public class Cell
         if (A > 0)
         {
             A = (byte)Math.Max(0, A - 10);
+            R = (byte)Math.Max(0, R - 5); // Gradually reduce red
+            G = (byte)Math.Max(0, G - 5); // Gradually reduce green
+            B = (byte)Math.Max(0, B - 5); // Gradually reduce blue
         }
     }
 
@@ -80,7 +83,7 @@ public class Cell
 
     private void ActivateTrail()
     {
-        this.A = 200; // Reset alpha to fully opaque
+        this.A = 254; // Reset alpha to fully opaque
     }
 
     private void DeactivateTrail()

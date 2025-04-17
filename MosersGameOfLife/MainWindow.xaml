@@ -4,21 +4,63 @@
        Title="Moser's Game of Life" Height="600" Width="800">
    <Grid>
        <!-- Main Grid Display -->
-       <UniformGrid x:Name="GridDisplay" Background="White" />
+       <UniformGrid x:Name="GridDisplay" Background="Black" />
 
        <!-- Transparent Settings Panel -->
-       <StackPanel Orientation="Vertical" Background="#AAFFFFFF" 
+       <StackPanel Orientation="Vertical" Background="#AAAAAAAA" 
                    HorizontalAlignment="Right" VerticalAlignment="Top" 
                    Margin="10" Width="200">
            <Button Content="Generate New World" Click="GenerateNewGrid_Click" />
-            <ComboBox x:Name="ColorBehaviorComboBox" SelectionChanged="ColorBehaviorComboBox_SelectionChanged" SelectedIndex="0">
-                <ComboBoxItem Content="Black and White" Tag="BlackAndWhite" />
-                <ComboBoxItem Content="Majority Color" Tag="MajorityColor" />
-                <ComboBoxItem Content="Average Color" Tag="AverageColor" />
-               
+           <ComboBox x:Name="ColorBehaviorComboBox" SelectionChanged="ColorBehaviorComboBox_SelectionChanged" SelectedIndex="0">
+               <ComboBoxItem Content="Default" Tag="Default" />
+               <ComboBoxItem Content="Majority Color" Tag="MajorityColor" />
+               <ComboBoxItem Content="Average Color" Tag="AverageColor" />
            </ComboBox>
            <CheckBox Content="Enable Trail" x:Name="TrailCheckBox" 
                      Checked="TrailCheckBox_Checked" Unchecked="TrailCheckBox_Unchecked" />
-        </StackPanel>
+
+           <!-- Rules Layout -->
+           <Grid Margin="10,10,0,0">
+               <!-- Define two columns: one for B and one for S -->
+               <Grid.ColumnDefinitions>
+                   <ColumnDefinition Width="1*" />
+                   <ColumnDefinition Width="1*" />
+               </Grid.ColumnDefinitions>
+               <!-- Define two rows: one for headers and one for checkboxes -->
+               <Grid.RowDefinitions>
+                   <RowDefinition Height="Auto" />
+                   <RowDefinition Height="*" />
+               </Grid.RowDefinitions>
+
+               <!-- Header Row -->
+               <TextBlock Text="B" FontWeight="Bold" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+               <TextBlock Text="S" FontWeight="Bold" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+               <!-- Checkboxes Row -->
+               <UniformGrid Grid.Column="0" Grid.Row="1" Rows="9" HorizontalAlignment="Center">
+                   <CheckBox Content="0" x:Name="B0" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="1" x:Name="B1" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="2" x:Name="B2" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="3" x:Name="B3" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" IsChecked="True" />
+                   <CheckBox Content="4" x:Name="B4" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="5" x:Name="B5" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="6" x:Name="B6" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="7" x:Name="B7" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="8" x:Name="B8" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+               </UniformGrid>
+
+               <UniformGrid Grid.Column="1" Grid.Row="1" Rows="9" HorizontalAlignment="Center">
+                   <CheckBox Content="0" x:Name="S0" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="1" x:Name="S1" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="2" x:Name="S2" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" IsChecked="True"/>
+                   <CheckBox Content="3" x:Name="S3" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" IsChecked="True"/>
+                   <CheckBox Content="4" x:Name="S4" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="5" x:Name="S5" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="6" x:Name="S6" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="7" x:Name="S7" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+                   <CheckBox Content="8" x:Name="S8" Checked="RuleCheckbox_Checked" Unchecked="RuleCheckbox_Unchecked" />
+               </UniformGrid>
+           </Grid>
+       </StackPanel>
    </Grid>
 </Window>
