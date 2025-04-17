@@ -464,20 +464,52 @@ namespace MosersGameOfLife
                 Ruleset newRuleset = GetRulesetFromCheckboxes();
                 newRuleset.Name = rulesetName;
 
-                // Get a description if this is a new ruleset
+                // Try to find if a ruleset with these exact rules already exists but has a different name
+                var existingRuleset = _rulesetManager.Rulesets.FirstOrDefault(r =>
+                    r.Name != rulesetName &&
+                    r.BirthRules.SetEquals(newRuleset.BirthRules) &&
+                    r.SurvivalRules.SetEquals(newRuleset.SurvivalRules));
+
+                if (existingRuleset != null)
+                {
+                    // A ruleset with the same rules but different name exists
+                    var dialog = new DuplicateRulesetDialog(existingRuleset.Name, existingRuleset.GetNotation());
+                    dialog.Owner = this;
+                    dialog.ShowDialog();
+
+                    switch (dialog.Result)
+                    {
+                        case DuplicateRulesetDialog.DialogResult.UseExisting:
+                            // Select the existing ruleset
+                            int index = RulesetComboBox.Items.IndexOf(existingRuleset.Name);
+                            if (index >= 0)
+                            {
+                                RulesetComboBox.SelectedIndex = index;
+                            }
+                            return;
+
+                        case DuplicateRulesetDialog.DialogResult.Cancel:
+                            // User cancelled, don't save anything
+                            return;
+
+                        case DuplicateRulesetDialog.DialogResult.CreateDuplicate:
+                            // Continue below to create a duplicate
+                            break;
+                    }
+                }
+
+                // Rest of your existing code
                 bool isNewRuleset = !_rulesetManager.Rulesets.Any(r => r.Name == rulesetName);
                 if (isNewRuleset)
                 {
-                    // Optional: You could add a dialog here to get a description
                     newRuleset.Description = "Custom ruleset";
                 }
                 else
                 {
-                    // Preserve existing description
-                    var existingRuleset = _rulesetManager.Rulesets.FirstOrDefault(r => r.Name == rulesetName);
-                    if (existingRuleset != null)
+                    var existingNameRuleset = _rulesetManager.Rulesets.FirstOrDefault(r => r.Name == rulesetName);
+                    if (existingNameRuleset != null)
                     {
-                        newRuleset.Description = existingRuleset.Description;
+                        newRuleset.Description = existingNameRuleset.Description;
                     }
                 }
 
@@ -489,10 +521,10 @@ namespace MosersGameOfLife
                 InitializeRulesetUI();
 
                 // Select the saved ruleset
-                int index = RulesetComboBox.Items.IndexOf(currentSelection);
-                if (index >= 0)
+                int savedIndex = RulesetComboBox.Items.IndexOf(currentSelection);
+                if (savedIndex >= 0)
                 {
-                    RulesetComboBox.SelectedIndex = index;
+                    RulesetComboBox.SelectedIndex = savedIndex;
                 }
 
                 MessageBox.Show($"Ruleset '{rulesetName}' saved successfully.", "Ruleset Saved", MessageBoxButton.OK, MessageBoxImage.Information);

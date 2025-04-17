@@ -36,6 +36,15 @@ namespace MosersGameOfLife.src
         {
             return $"B{string.Join("", BirthRules)}/S{string.Join("", SurvivalRules)}";
         }
+
+        public bool HasSameRules(Ruleset other)
+        {
+            if (other == null) return false;
+
+            // Check if the birth and survival rules are the same
+            return BirthRules.SetEquals(other.BirthRules) &&
+                   SurvivalRules.SetEquals(other.SurvivalRules);
+        }
     }
 
     public class RulesetManager
@@ -238,7 +247,18 @@ namespace MosersGameOfLife.src
             {
                 throw new InvalidOperationException("Cannot modify predefined rulesets.");
             }
-            
+
+            // Check if a ruleset with this exact rule pattern already exists (different name)
+            var existingRulePattern = _rulesets.FirstOrDefault(r =>
+                r.Name != ruleset.Name && r.HasSameRules(ruleset));
+
+            if (existingRulePattern != null)
+            {
+                throw new InvalidOperationException(
+                    $"A ruleset with these exact rules already exists with name '{existingRulePattern.Name}'. " +
+                    $"Rule pattern: {existingRulePattern.GetNotation()}");
+            }
+
             // Check if a ruleset with this name already exists
             int existingIndex = _rulesets.FindIndex(r => r.Name == ruleset.Name);
             if (existingIndex >= 0)
@@ -251,7 +271,7 @@ namespace MosersGameOfLife.src
                 // Add new ruleset
                 _rulesets.Add(ruleset);
             }
-            
+
             // Save changes
             SaveRules();
         }
