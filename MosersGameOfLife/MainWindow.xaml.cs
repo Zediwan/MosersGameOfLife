@@ -57,7 +57,7 @@ namespace MosersGameOfLife
             GenerateDefaultPaintColor();
 
             // Initialize non-nullable fields
-            _grid = new Grid(50, 50); // Default grid dimensions
+            _grid = new Grid(64, 64); // Default grid dimensions
             _timer = new DispatcherTimer();
             _rectangles = Array.Empty<Rectangle>();
             _paintToggleButton = new CheckBox();
