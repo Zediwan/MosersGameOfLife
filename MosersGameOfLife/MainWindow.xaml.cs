@@ -19,6 +19,21 @@ namespace MosersGameOfLife
         private bool _isMouseDown = false;
         private bool _paintAliveState = true; // true = paint alive cells, false = paint dead cells
         private CheckBox _paintToggleButton;
+        // Add these fields to the MainWindow class
+        private byte _currentPaintR = 0;
+        private byte _currentPaintG = 255;
+        private byte _currentPaintB = 0;
+        private Random _random = new Random();
+
+        // Add this method to generate a new random color
+        private void GenerateNewPaintColor()
+        {
+            // Generate vibrant colors by avoiding very dark or very light colors
+            _currentPaintR = (byte)(_random.Next(128) + 64);
+            _currentPaintG = (byte)(_random.Next(128) + 64);
+            _currentPaintB = (byte)(_random.Next(128) + 64);
+        }
+
 
         public MainWindow()
         {
@@ -116,6 +131,12 @@ namespace MosersGameOfLife
 
         private void Rectangle_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            // Generate a new color when starting a new paint stroke
+            if (!_isMouseDown && _paintAliveState)
+            {
+                GenerateNewPaintColor();
+            }
+
             _isMouseDown = true;
             ToggleCellState((Rectangle)sender);
             e.Handled = true;
@@ -136,6 +157,12 @@ namespace MosersGameOfLife
 
         private void GridDisplay_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            // Generate a new color when starting a new paint stroke
+            if (!_isMouseDown && _paintAliveState)
+            {
+                GenerateNewPaintColor();
+            }
+
             _isMouseDown = true;
         }
 
@@ -159,23 +186,24 @@ namespace MosersGameOfLife
                 // Set the cell state based on the paint mode
                 if (_paintAliveState)
                 {
-                    // Determine the color based on the current color behavior
-                    byte r = 0, g = 0, b = 0;
+                    // Use the current paint color
+                    byte r, g, b;
                     if (Grid.ColorBehavior == ColorBehaviorMode.Default)
                     {
-                        r = 0;
-                        g = 255;
-                        b = 0;
+                        // Use the current paint color
+                        r = _currentPaintR;
+                        g = _currentPaintG;
+                        b = _currentPaintB;
                     }
                     else
                     {
-                        // For other modes, use white
-                        r = 255;
-                        g = 255;
-                        b = 255;
+                        // For other color modes, still use the current paint color
+                        r = _currentPaintR;
+                        g = _currentPaintG;
+                        b = _currentPaintB;
                     }
 
-                    // Paint alive cell with appropriate color
+                    // Paint alive cell with the current color
                     _grid.SetCellState(i, j, true, r, g, b);
 
                     // Update the UI
