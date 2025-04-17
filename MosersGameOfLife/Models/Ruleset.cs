@@ -34,8 +34,10 @@ namespace MosersGameOfLife.Models
         /// </summary>
         public Ruleset()
         {
+            Name = "New Ruleset";
             BirthRules = new HashSet<int>();
             SurvivalRules = new HashSet<int>();
+            Description = "No description available.";
         }
 
         /// <summary>

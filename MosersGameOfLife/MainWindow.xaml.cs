@@ -565,7 +565,7 @@ namespace MosersGameOfLife
             {
                 if (_grid == null) return;
 
-                int rule = int.Parse(checkbox.Content.ToString());
+                int rule = int.Parse(checkbox.Content?.ToString() ?? "0");
                 if (checkbox.Name.StartsWith("B"))
                 {
                     _grid.BirthRules.Remove(rule);
@@ -614,7 +614,7 @@ namespace MosersGameOfLife
         /// </summary>
         private void SaveRuleset_Click(object sender, RoutedEventArgs e)
         {
-            string rulesetName = RulesetNameTextBox.Text?.Trim();
+            string? rulesetName = RulesetNameTextBox.Text?.Trim();
 
             if (string.IsNullOrEmpty(rulesetName))
             {
@@ -704,7 +704,7 @@ namespace MosersGameOfLife
         /// </summary>
         private void DeleteRuleset_Click(object sender, RoutedEventArgs e)
         {
-            string rulesetName = RulesetNameTextBox.Text?.Trim();
+            string? rulesetName = RulesetNameTextBox.Text?.Trim();
 
             if (string.IsNullOrEmpty(rulesetName))
             {

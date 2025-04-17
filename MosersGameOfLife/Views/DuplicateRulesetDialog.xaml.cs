@@ -10,7 +10,7 @@ namespace MosersGameOfLife.Views
         /// <summary>
         /// Possible user actions when encountering a duplicate ruleset.
         /// </summary>
-        public enum DialogResult
+        public new enum DialogResult
         {
             /// <summary>
             /// Use the existing ruleset instead of creating a duplicate.
