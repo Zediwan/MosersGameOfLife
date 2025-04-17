@@ -745,6 +745,34 @@ namespace MosersGameOfLife
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void ResetRuleset_Click(object sender, RoutedEventArgs e)
+        {
+            if (RulesetComboBox.SelectedItem is string selectedRulesetName)
+            {
+                // Find the selected ruleset
+                var selectedRuleset = _rulesetManager.Rulesets
+                    .FirstOrDefault(r => r.Name == selectedRulesetName);
+
+                if (selectedRuleset != null)
+                {
+                    // Update the checkboxes to reflect the selected ruleset
+                    UpdateCheckboxesFromRuleset(selectedRuleset);
+
+                    // Update the grid's ruleset
+                    _rulesetManager.ApplyRuleset(selectedRuleset, _grid);
+
+                    // Update the Current Ruleset text
+                    UpdateCurrentRulesetText();
+                }
+                else
+                {
+                    MessageBox.Show("No ruleset selected or ruleset not found.",
+                                    "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+
         #endregion
     }
 }
