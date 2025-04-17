@@ -26,110 +26,168 @@
 
         public void Update()
         {
+            // Swap the buffers
             (Buffer, Cells) = (Cells, Buffer);
+
             Parallel.For(0, Cols, i =>
             {
                 for (var j = 0; j < Rows; j++)
                 {
-                    Cell cell = Cells[i, j];
-                    var (aliveNeighbors, newR, newG, newB) = CountAliveNeighborsAndGetColor(i, j);
-
-                    if (!cell.IsAlive && aliveNeighbors == 3)
-                    {
-                        Buffer[i, j].ComeAlive();
-
-                        switch (ColorBehavior)
-                        {
-                            case ColorBehaviorMode.MajorityColor:
-                                Buffer[i, j].SetColor(newR, newG, newB);
-                                break;
-
-                            case ColorBehaviorMode.AverageColor:
-                                Buffer[i, j].SetColor(newR, newG, newB);
-                                break;
-
-                            case ColorBehaviorMode.BlackAndWhite:
-                                Buffer[i, j].SetColor(0, 0, 0); // Black for alive cells
-                                break;
-                        }
-                    }
-                    else if (cell.IsAlive && (aliveNeighbors < 2 || aliveNeighbors > 3))
-                    {
-                        Buffer[i, j].Die();
-                        Buffer[i, j].SetColor(cell.R, cell.G, cell.B, 200); // Retain color for trail
-                    }
-                    else
-                    {
-                        Buffer[i, j] = cell.Copy();
-                        if (Buffer[i, j].HasTrail)
-                        {
-                            Buffer[i, j].FadeTrail(); // Fade the trail
-                        }
-                    }
+                    UpdateCell(i, j);
                 }
             });
         }
 
-        private (int aliveCount, byte avgR, byte avgG, byte avgB) CountAliveNeighborsAndGetColor(int x, int y)
+        private void UpdateCell(int i, int j)
         {
-            int aliveCount = 0;
-            int totalR = 0, totalG = 0, totalB = 0;
-            var colorCounts = ColorBehavior == ColorBehaviorMode.MajorityColor ? new Dictionary<(byte R, byte G, byte B), int>() : null;
+            Cell cell = Cells[i, j];
 
-            // Precompute wrapped indices for neighbors
+            int aliveNeighbors;
+            byte newR = 0, newG = 0, newB = 0;
+
+            // Performance optimization: only calculate colors when needed
+            if (ColorBehavior == ColorBehaviorMode.BlackAndWhite)
+            {
+                aliveNeighbors = CountAliveNeighbors(i, j);
+            }
+            else
+            {
+                var result = CountAliveNeighborsAndGetColor(i, j);
+                aliveNeighbors = result.aliveCount;
+                newR = result.avgR;
+                newG = result.avgG;
+                newB = result.avgB;
+            }
+
+            if (!cell.IsAlive && aliveNeighbors == 3)
+            {
+                // Birth rule
+                Buffer[i, j].ComeAlive();
+                ApplyColorByBehavior(Buffer[i, j], newR, newG, newB);
+            }
+            else if (cell.IsAlive && (aliveNeighbors < 2 || aliveNeighbors > 3))
+            {
+                // Death rule
+                Buffer[i, j].Die();
+                // For trail colors in BlackAndWhite mode, we might want a different approach
+                if (ColorBehavior == ColorBehaviorMode.BlackAndWhite)
+                    Buffer[i, j].SetColor(0, 0, 0, 200); // Black trail
+                else
+                    Buffer[i, j].SetColor(cell.R, cell.G, cell.B, 200); // Colored trail
+            }
+            else
+            {
+                // Survival or remain dead
+                Buffer[i, j] = cell.Copy();
+                if (Buffer[i, j].HasTrail)
+                {
+                    Buffer[i, j].FadeTrail();
+                }
+            }
+        }
+
+        private void ApplyColorByBehavior(Cell cell, byte r, byte g, byte b)
+        {
+            switch (ColorBehavior)
+            {
+                case ColorBehaviorMode.BlackAndWhite:
+                    cell.SetColor(0, 0, 0);
+                    break;
+                case ColorBehaviorMode.MajorityColor:
+                case ColorBehaviorMode.AverageColor:
+                    cell.SetColor(r, g, b);
+                    break;
+            }
+        }
+
+        private IEnumerable<(int x, int y)> GetNeighborPositions(int x, int y)
+        {
             for (var i = -1; i <= 1; i++)
             {
                 for (var j = -1; j <= 1; j++)
                 {
-                    if (i == 0 && j == 0) continue; // Skip the cell itself
+                    if (i == 0 && j == 0) continue;
 
-                    // Calculate wrapped coordinates
-                    int newX = (x + i + this.Cols) % this.Cols;
-                    int newY = (y + j + this.Rows) % this.Rows;
-
-                    Cell neighborCell = this.Cells[newX, newY];
-
-                    if (!neighborCell.IsAlive) continue;
-
-                    aliveCount++;
-
-                    if (ColorBehavior == ColorBehaviorMode.AverageColor)
-                    {
-                        var color = neighborCell.GetColor();
-                        totalR += color.R;
-                        totalG += color.G;
-                        totalB += color.B;
-                    }
-                    else if (ColorBehavior == ColorBehaviorMode.MajorityColor)
-                    {
-                        var color = neighborCell.GetColor();
-                        var key = (color.R, color.G, color.B);
-
-                        if (colorCounts.ContainsKey(key))
-                            colorCounts[key]++;
-                        else
-                            colorCounts[key] = 1;
-                    }
+                    int newX = (x + i + Cols) % Cols;
+                    int newY = (y + j + Rows) % Rows;
+                    yield return (newX, newY);
                 }
+            }
+        }
+
+        private void ProcessCellColor(Cell cell, ref int totalR, ref int totalG, ref int totalB, Dictionary<(byte, byte, byte), int> colorCounts)
+        {
+            var color = cell.GetColor();
+
+            if (ColorBehavior == ColorBehaviorMode.AverageColor)
+            {
+                totalR += color.R;
+                totalG += color.G;
+                totalB += color.B;
+            }
+            else if (ColorBehavior == ColorBehaviorMode.MajorityColor && colorCounts != null)
+            {
+                var key = (color.R, color.G, color.B);
+                colorCounts[key] = colorCounts.TryGetValue(key, out var count) ? count + 1 : 1;
+            }
+        }
+
+        private (int aliveCount, byte avgR, byte avgG, byte avgB) CalculateColorResult(
+            int aliveCount, int totalR, int totalG, int totalB, Dictionary<(byte, byte, byte), int> colorCounts)
+        {
+            if (aliveCount == 0)
+            {
+                return (0, 128, 128, 128); // Default to mid-gray if no neighbors
             }
 
             if (ColorBehavior == ColorBehaviorMode.AverageColor)
             {
-                // Calculate average color
-                byte avgR = (byte)(aliveCount > 0 ? totalR / aliveCount : 128); // Default to mid-gray
-                byte avgG = (byte)(aliveCount > 0 ? totalG / aliveCount : 128);
-                byte avgB = (byte)(aliveCount > 0 ? totalB / aliveCount : 128);
-
-                return (aliveCount, avgR, avgG, avgB);
+                return (aliveCount,
+                    (byte)(totalR / aliveCount),
+                    (byte)(totalG / aliveCount),
+                    (byte)(totalB / aliveCount));
             }
-            else if (ColorBehavior == ColorBehaviorMode.MajorityColor && colorCounts != null && colorCounts.Count > 0)
+            else if (ColorBehavior == ColorBehaviorMode.MajorityColor && colorCounts?.Count > 0)
             {
                 var majorityColor = colorCounts.OrderByDescending(c => c.Value).First().Key;
-                return (aliveCount, majorityColor.R, majorityColor.G, majorityColor.B);
+                return (aliveCount, majorityColor.Item1, majorityColor.Item2, majorityColor.Item3);
             }
 
-            // Default to mid-gray if no color calculation is needed
             return (aliveCount, 128, 128, 128);
+        }
+
+        private int CountAliveNeighbors(int x, int y)
+        {
+            int aliveCount = 0;
+
+            foreach (var neighbor in GetNeighborPositions(x, y))
+            {
+                if (Cells[neighbor.x, neighbor.y].IsAlive)
+                    aliveCount++;
+            }
+
+            return aliveCount;
+        }
+
+        // Full method when colors are needed
+        private (int aliveCount, byte avgR, byte avgG, byte avgB) CountAliveNeighborsAndGetColor(int x, int y)
+        {
+            // Existing implementation
+            int aliveCount = 0;
+            int totalR = 0, totalG = 0, totalB = 0;
+            var colorCounts = ColorBehavior == ColorBehaviorMode.MajorityColor ? new Dictionary<(byte, byte, byte), int>() : null;
+
+            foreach (var neighbor in GetNeighborPositions(x, y))
+            {
+                Cell neighborCell = Cells[neighbor.x, neighbor.y];
+
+                if (!neighborCell.IsAlive) continue;
+
+                aliveCount++;
+                ProcessCellColor(neighborCell, ref totalR, ref totalG, ref totalB, colorCounts);
+            }
+
+            return CalculateColorResult(aliveCount, totalR, totalG, totalB, colorCounts);
         }
 
         public static Grid GetRandomGrid(int cols, int rows)
