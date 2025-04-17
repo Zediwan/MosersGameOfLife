@@ -1,24 +1,50 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using System.Linq;
 
-namespace MosersGameOfLife.src
+namespace MosersGameOfLife.Models
 {
+    /// <summary>
+    /// Represents a set of rules for Conway's Game of Life.
+    /// Each ruleset consists of birth rules and survival rules.
+    /// </summary>
     public class Ruleset
     {
+        /// <summary>
+        /// The name of the ruleset.
+        /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Set of neighbor counts that cause a dead cell to become alive.
+        /// </summary>
         public HashSet<int> BirthRules { get; set; }
+
+        /// <summary>
+        /// Set of neighbor counts that allow an alive cell to survive.
+        /// </summary>
         public HashSet<int> SurvivalRules { get; set; }
+
+        /// <summary>
+        /// Description of the ruleset's behavior and characteristics.
+        /// </summary>
         public string Description { get; set; }
 
+        /// <summary>
+        /// Creates a new empty ruleset with default values.
+        /// </summary>
         public Ruleset()
         {
             BirthRules = new HashSet<int>();
             SurvivalRules = new HashSet<int>();
         }
 
+        /// <summary>
+        /// Creates a ruleset with the specified properties.
+        /// </summary>
+        /// <param name="name">Name of the ruleset</param>
+        /// <param name="birthRules">Set of birth rules</param>
+        /// <param name="survivalRules">Set of survival rules</param>
+        /// <param name="description">Description of the ruleset</param>
         public Ruleset(string name, HashSet<int> birthRules, HashSet<int> survivalRules, string description = "")
         {
             Name = name;
@@ -27,16 +53,29 @@ namespace MosersGameOfLife.src
             Description = description;
         }
 
+        /// <summary>
+        /// Returns a string representation of the ruleset.
+        /// </summary>
+        /// <returns>A string in the format "Name: B[birth rules]/S[survival rules]"</returns>
         public override string ToString()
         {
             return $"{Name}: B{string.Join("", BirthRules)}/S{string.Join("", SurvivalRules)}";
         }
-        
+
+        /// <summary>
+        /// Gets the standard notation for this ruleset.
+        /// </summary>
+        /// <returns>A string in the format "B[birth rules]/S[survival rules]"</returns>
         public string GetNotation()
         {
             return $"B{string.Join("", BirthRules)}/S{string.Join("", SurvivalRules)}";
         }
 
+        /// <summary>
+        /// Determines if this ruleset has the same rules as another ruleset.
+        /// </summary>
+        /// <param name="other">The ruleset to compare with</param>
+        /// <returns>True if both rulesets have identical birth and survival rules</returns>
         public bool HasSameRules(Ruleset other)
         {
             if (other == null) return false;
@@ -47,20 +86,47 @@ namespace MosersGameOfLife.src
         }
     }
 
+    /// <summary>
+    /// Manages rulesets for the Conway's Game of Life application.
+    /// Handles loading, saving, and applying rulesets.
+    /// </summary>
     public class RulesetManager
     {
+        /// <summary>
+        /// Directory where rulesets are saved.
+        /// </summary>
         private static readonly string SaveDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "MosersGameOfLife");
-        
+
+        /// <summary>
+        /// Full path to the ruleset save file.
+        /// </summary>
         private static readonly string SaveFilePath = Path.Combine(SaveDirectory, "rulesets.json");
-        
+
+        /// <summary>
+        /// List of all rulesets (predefined and custom).
+        /// </summary>
         private List<Ruleset> _rulesets;
+
+        /// <summary>
+        /// List of predefined (built-in) rulesets.
+        /// </summary>
         private List<Ruleset> _predefinedRulesets;
 
+        /// <summary>
+        /// Gets the list of all available rulesets.
+        /// </summary>
         public List<Ruleset> Rulesets => _rulesets;
+
+        /// <summary>
+        /// Gets the list of predefined (built-in) rulesets.
+        /// </summary>
         public List<Ruleset> PredefinedRulesets => _predefinedRulesets;
 
+        /// <summary>
+        /// Initializes a new RulesetManager and loads all rulesets.
+        /// </summary>
         public RulesetManager()
         {
             _rulesets = new List<Ruleset>();
@@ -69,115 +135,121 @@ namespace MosersGameOfLife.src
             LoadSavedRules();
         }
 
+        /// <summary>
+        /// Loads all predefined rulesets.
+        /// </summary>
         private void LoadPredefinedRules()
         {
             // Load all the predefined rules
             _predefinedRulesets.Add(new Ruleset(
-                "Conway's Game of Life", 
+                "Conway's Game of Life",
                 new HashSet<int> { 3 },
                 new HashSet<int> { 2, 3 },
                 "The classic cellular automaton"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "HighLife", 
+                "HighLife",
                 new HashSet<int> { 3, 6 },
                 new HashSet<int> { 2, 3 },
                 "Supports replicators"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Day & Night", 
+                "Day & Night",
                 new HashSet<int> { 3, 6, 7, 8 },
                 new HashSet<int> { 3, 4, 6, 7, 8 },
                 "Symmetrical rule"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Replicator", 
+                "Replicator",
                 new HashSet<int> { 1, 3, 5, 7 },
                 new HashSet<int> { 1, 3, 5, 7 },
                 "Creates replicating patterns"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Seeds", 
+                "Seeds",
                 new HashSet<int> { 2 },
                 new HashSet<int>(),
                 "Fast growth, chaotic"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Life without death", 
+                "Life without death",
                 new HashSet<int> { 3 },
                 new HashSet<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8 },
                 "Everything lives forever"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "2x2", 
+                "2x2",
                 new HashSet<int> { 3, 6 },
                 new HashSet<int> { 2, 4, 5 },
                 "Blocks, emulates rule 90"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Assimilation", 
+                "Assimilation",
                 new HashSet<int> { 3, 4, 5 },
                 new HashSet<int> { 5 },
                 "Assimilates patterns"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Isolated Birth", 
+                "Isolated Birth",
                 new HashSet<int> { 1 },
                 new HashSet<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8 },
                 "Give birth when isolated (filling pattern)"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Maze", 
+                "Maze",
                 new HashSet<int> { 3, 4 },
                 new HashSet<int> { 3, 4 },
                 "Tends to form stable mazes"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Coagulations", 
+                "Coagulations",
                 new HashSet<int> { 3, 8 },
                 new HashSet<int> { 2, 3 },
                 "Forms growing blobs"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Diamoeba", 
+                "Diamoeba",
                 new HashSet<int> { 3 },
                 new HashSet<int> { 0, 1, 2, 3, 4, 5, 6 },
                 "Chaotic amoeba-like growth"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Anneal", 
+                "Anneal",
                 new HashSet<int> { 2 },
                 new HashSet<int> { 3, 4, 5, 6, 7, 8 },
                 "Melts patterns together"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Long Life", 
+                "Long Life",
                 new HashSet<int> { 3 },
                 new HashSet<int> { 1, 2, 3, 4, 5 },
                 "Long-living structures"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Gnarl", 
+                "Gnarl",
                 new HashSet<int> { 2, 5 },
                 new HashSet<int> { 4 },
                 "Tree-like growth"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Stains", 
+                "Stains",
                 new HashSet<int> { 3, 5, 7 },
                 new HashSet<int> { 1, 3, 5, 8 },
                 "Forms stain-like patterns"));
 
             _predefinedRulesets.Add(new Ruleset(
-                "Fill", 
+                "Fill",
                 new HashSet<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8 },
                 new HashSet<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8 },
                 "Everything fills instantly"));
-                
+
             // Add all predefined rulesets to the main ruleset list
             _rulesets.AddRange(_predefinedRulesets);
         }
 
+        /// <summary>
+        /// Loads user-saved rulesets from the save file.
+        /// </summary>
         public void LoadSavedRules()
         {
             try
@@ -210,6 +282,9 @@ namespace MosersGameOfLife.src
             }
         }
 
+        /// <summary>
+        /// Saves custom rulesets to the save file.
+        /// </summary>
         public void SaveRules()
         {
             try
@@ -225,7 +300,7 @@ namespace MosersGameOfLife.src
                 {
                     WriteIndented = true
                 });
-                
+
                 File.WriteAllText(SaveFilePath, json);
             }
             catch (Exception ex)
@@ -234,12 +309,22 @@ namespace MosersGameOfLife.src
             }
         }
 
+        /// <summary>
+        /// Applies a ruleset to a grid.
+        /// </summary>
+        /// <param name="ruleset">The ruleset to apply</param>
+        /// <param name="grid">The grid to apply the ruleset to</param>
         public void ApplyRuleset(Ruleset ruleset, Grid grid)
         {
             grid.BirthRules = new HashSet<int>(ruleset.BirthRules);
             grid.SurvivalRules = new HashSet<int>(ruleset.SurvivalRules);
         }
 
+        /// <summary>
+        /// Adds or updates a ruleset in the collection.
+        /// </summary>
+        /// <param name="ruleset">The ruleset to add or update</param>
+        /// <exception cref="InvalidOperationException">Thrown if trying to modify a predefined ruleset</exception>
         public void AddRuleset(Ruleset ruleset)
         {
             // Check if this is trying to overwrite a predefined ruleset
@@ -248,7 +333,7 @@ namespace MosersGameOfLife.src
                 throw new InvalidOperationException("Cannot modify predefined rulesets.");
             }
 
-            // Check if a ruleset with this exact rule pattern already exists (different name)
+            // Check for existing rulesets with identical rules
             var existingRulePattern = _rulesets.FirstOrDefault(r =>
                 r.Name != ruleset.Name && r.HasSameRules(ruleset));
 
@@ -276,6 +361,11 @@ namespace MosersGameOfLife.src
             SaveRules();
         }
 
+        /// <summary>
+        /// Deletes a ruleset from the collection.
+        /// </summary>
+        /// <param name="name">Name of the ruleset to delete</param>
+        /// <exception cref="InvalidOperationException">Thrown if trying to delete a predefined ruleset</exception>
         public void DeleteRuleset(string name)
         {
             // Don't allow deletion of predefined rules
@@ -283,7 +373,7 @@ namespace MosersGameOfLife.src
             {
                 throw new InvalidOperationException("Cannot delete predefined rulesets.");
             }
-            
+
             int index = _rulesets.FindIndex(r => r.Name == name);
             if (index >= 0)
             {
@@ -292,6 +382,11 @@ namespace MosersGameOfLife.src
             }
         }
 
+        /// <summary>
+        /// Gets a ruleset representing the current state of a grid.
+        /// </summary>
+        /// <param name="grid">The grid to create a ruleset from</param>
+        /// <returns>A ruleset with the current rules of the grid</returns>
         public Ruleset GetCurrentRuleset(Grid grid)
         {
             return new Ruleset(

@@ -3,59 +3,85 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using MosersGameOfLife.src;
-using Grid = MosersGameOfLife.src.Grid;
+using MosersGameOfLife.Models;
+using MosersGameOfLife.Views;
+using Grid = MosersGameOfLife.Models.Grid;
 
 namespace MosersGameOfLife
 {
+    /// <summary>
+    /// Main window for Conway's Game of Life implementation.
+    /// Handles UI interaction, grid visualization, and simulation control.
+    /// </summary>
     public partial class MainWindow : Window
     {
-        private Grid _grid;
-        private DispatcherTimer _timer;
-        private Rectangle[] _rectangles; // 1D array to store UI elements
-        private bool _isTrailEnabled;
-        private RulesetManager _rulesetManager;
-        private bool _updatingCheckboxes = false;
-        private bool _isMouseDown = false;
-        private bool _paintAliveState = true; // true = paint alive cells, false = paint dead cells
-        private CheckBox _paintToggleButton;
-        // Add these fields to the MainWindow class
-        private byte _currentPaintR = 0;
-        private byte _currentPaintG = 255;
-        private byte _currentPaintB = 0;
-        private Random _random = new Random();
+        #region Fields
 
-        // Add this method to generate a new random color
-        private void GenerateNewPaintColor()
-        {
-            // Generate vibrant colors by avoiding very dark or very light colors
-            _currentPaintR = (byte)(_random.Next(128) + 64);
-            _currentPaintG = (byte)(_random.Next(128) + 64);
-            _currentPaintB = (byte)(_random.Next(128) + 64);
-        }
+        // Simulation Core Components
+        private Grid _grid;                      // Game grid containing all cells and logic
+        private DispatcherTimer _timer;          // Timer for controlling simulation speed
+        private Rectangle[] _rectangles;         // UI elements representing cells
+        private bool _isPaused = false;          // Tracks simulation pause state
 
+        // Ruleset Management
+        private RulesetManager _rulesetManager;  // Handles ruleset storage and retrieval
+        private bool _updatingCheckboxes = false; // Flag to prevent recursive checkbox events
 
+        // Display and Rendering Options
+        private bool _isTrailEnabled;            // Whether to show cell trails
+
+        // Painting and User Interaction
+        private bool _isMouseDown = false;       // Tracks mouse state for painting
+        private bool _paintAliveState = true;    // Whether to paint alive or dead cells
+        private CheckBox _paintToggleButton;     // Reference to paint toggle UI element
+
+        // Painting Color Management
+        private byte _currentPaintR = 0;         // Red component of current paint color
+        private byte _currentPaintG = 255;       // Green component of current paint color
+        private byte _currentPaintB = 0;         // Blue component of current paint color
+        private Random _random = new Random();   // Random number generator for colors
+
+        #endregion
+
+        #region Initialization
+
+        /// <summary>
+        /// Initializes the main window and starts the Game of Life simulation.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
             _rulesetManager = new RulesetManager();
+
+            // Initialize the first paint color
+            GenerateNewPaintColor();
+
+            // Initialize non-nullable fields
+            _grid = new Grid(50, 50); // Default grid dimensions
+            _timer = new DispatcherTimer();
+            _rectangles = Array.Empty<Rectangle>();
+            _paintToggleButton = new CheckBox();
+
             InitializeGame();
             InitializeRulesetUI();
         }
 
+        /// <summary>
+        /// Initializes the simulation grid and timer.
+        /// </summary>
         private void InitializeGame()
         {
             // Initialize the grid
-            int cols = 50, rows = 50; // Adjust as needed
+            int cols = 50, rows = 50; // Default grid dimensions
             _grid = Grid.GetRandomGrid(cols, rows);
 
             // Initialize the UI
             InitializeGridUI();
 
-            // Set up the timer
+            // Set up the timer for simulation updates
             _timer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(100) // Adjust update interval as needed
+                Interval = TimeSpan.FromMilliseconds(100) // Default update speed
             };
             _timer.Tick += (s, e) => UpdateGrid();
             _timer.Start();
@@ -63,6 +89,9 @@ namespace MosersGameOfLife
             UpdateCurrentRulesetText();
         }
 
+        /// <summary>
+        /// Initializes the ruleset selection UI and populates it with available rulesets.
+        /// </summary>
         private void InitializeRulesetUI()
         {
             // Populate the ruleset combobox
@@ -79,12 +108,9 @@ namespace MosersGameOfLife
             }
         }
 
-        private void UpdateCurrentRulesetText()
-        {
-            var currentRuleset = _rulesetManager.GetCurrentRuleset(_grid);
-            CurrentRulesetText.Text = $"Current: {currentRuleset.GetNotation()}";
-        }
-
+        /// <summary>
+        /// Initializes the visual grid UI and sets up mouse event handling.
+        /// </summary>
         private void InitializeGridUI()
         {
             int cols = _grid.Cells.GetLength(0);
@@ -105,7 +131,7 @@ namespace MosersGameOfLife
                     // Create a new rectangle for each cell
                     var rectangle = new Rectangle
                     {
-                        Width = double.NaN, // Adjust size as needed
+                        Width = double.NaN, // Size determined by UniformGrid
                         Height = double.NaN,
                         Fill = Brushes.Black, // Default color
                         StrokeThickness = 0.5,
@@ -129,6 +155,78 @@ namespace MosersGameOfLife
             GridDisplay.MouseLeave += GridDisplay_MouseLeave;
         }
 
+        #endregion
+
+        #region Grid Updates and Rendering
+
+        /// <summary>
+        /// Updates the grid state and renders the changes to the UI.
+        /// Called periodically by the timer to advance the simulation.
+        /// </summary>
+        private void UpdateGrid()
+        {
+            if (_isPaused) return;
+
+            // Update the grid state
+            _grid.Update();
+
+            // Update the UI without rebuilding it
+            int cols = _grid.Cells.GetLength(0);
+            int rows = _grid.Cells.GetLength(1);
+
+            for (int i = 0; i < cols; i++)
+            {
+                for (int j = 0; j < rows; j++)
+                {
+                    Cell cell = _grid.Cells[i, j];
+                    var rectangle = _rectangles[i * rows + j];
+
+                    if (cell.IsAlive)
+                    {
+                        // Render alive cells
+                        rectangle.Fill = new SolidColorBrush(cell.GetColor());
+                    }
+                    else if (_isTrailEnabled && cell.HasTrail)
+                    {
+                        // Render trail if enabled
+                        rectangle.Fill = new SolidColorBrush(cell.GetColor());
+                    }
+                    else
+                    {
+                        // Render dead cells as black
+                        rectangle.Fill = Brushes.Black;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the text displaying the current ruleset notation.
+        /// </summary>
+        private void UpdateCurrentRulesetText()
+        {
+            var currentRuleset = _rulesetManager.GetCurrentRuleset(_grid);
+            CurrentRulesetText.Text = $"Current: {currentRuleset.GetNotation()}";
+        }
+
+        /// <summary>
+        /// Generates a new random vibrant color for painting cells.
+        /// </summary>
+        private void GenerateNewPaintColor()
+        {
+            // Generate vibrant colors by avoiding very dark or very light colors
+            _currentPaintR = (byte)(_random.Next(128) + 64);
+            _currentPaintG = (byte)(_random.Next(128) + 64);
+            _currentPaintB = (byte)(_random.Next(128) + 64);
+        }
+
+        #endregion
+
+        #region Mouse Interaction for Cell Painting
+
+        /// <summary>
+        /// Handles mouse down on a specific cell rectangle.
+        /// </summary>
         private void Rectangle_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             // Generate a new color when starting a new paint stroke
@@ -142,6 +240,9 @@ namespace MosersGameOfLife
             e.Handled = true;
         }
 
+        /// <summary>
+        /// Handles mouse entering a cell rectangle during drag operations.
+        /// </summary>
         private void Rectangle_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (_isMouseDown)
@@ -150,11 +251,17 @@ namespace MosersGameOfLife
             }
         }
 
+        /// <summary>
+        /// Handles mouse up events on cell rectangles.
+        /// </summary>
         private void Rectangle_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             _isMouseDown = false;
         }
 
+        /// <summary>
+        /// Handles mouse down events on the grid display.
+        /// </summary>
         private void GridDisplay_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             // Generate a new color when starting a new paint stroke
@@ -166,16 +273,26 @@ namespace MosersGameOfLife
             _isMouseDown = true;
         }
 
+        /// <summary>
+        /// Handles mouse up events on the grid display.
+        /// </summary>
         private void GridDisplay_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             _isMouseDown = false;
         }
 
+        /// <summary>
+        /// Handles mouse leaving the grid display area.
+        /// </summary>
         private void GridDisplay_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
             _isMouseDown = false;
         }
 
+        /// <summary>
+        /// Toggles the state of a cell based on the current painting mode.
+        /// </summary>
+        /// <param name="rectangle">The rectangle representing the cell to modify</param>
         private void ToggleCellState(Rectangle rectangle)
         {
             if (rectangle.Tag is Point point)
@@ -230,188 +347,14 @@ namespace MosersGameOfLife
             }
         }
 
-        private void PaintToggle_Checked(object sender, RoutedEventArgs e)
-        {
-            _paintAliveState = true;
-        }
+        #endregion
 
-        private void PaintToggle_Unchecked(object sender, RoutedEventArgs e)
-        {
-            _paintAliveState = false;
-        }
+        #region Ruleset Management
 
-        private bool _isPaused = false;
-        private void PauseButton_Click(object sender, RoutedEventArgs e)
-        {
-            _isPaused = !_isPaused;
-
-            if (_isPaused)
-            {
-                _timer.Stop();
-                ((Button)sender).Content = "Resume";
-            }
-            else
-            {
-                _timer.Start();
-                ((Button)sender).Content = "Pause";
-            }
-        }
-
-        private void UpdateGrid()
-        {
-            if (_isPaused) return;
-
-            // Update the grid state
-            _grid.Update();
-
-            // Update the UI without rebuilding it
-            int cols = _grid.Cells.GetLength(0);
-            int rows = _grid.Cells.GetLength(1);
-
-            for (int i = 0; i < cols; i++)
-            {
-                for (int j = 0; j < rows; j++)
-                {
-                    Cell cell = _grid.Cells[i, j];
-                    var rectangle = _rectangles[i * rows + j];
-
-                    if (cell.IsAlive)
-                    {
-                        // Render alive cells
-                        rectangle.Fill = new SolidColorBrush(cell.GetColor());
-                    }
-                    else if (_isTrailEnabled && cell.HasTrail)
-                    {
-                        // Render trail if enabled
-                        rectangle.Fill = new SolidColorBrush(cell.GetColor());
-                    }
-                    else
-                    {
-                        // Render dead cells as black
-                        rectangle.Fill = Brushes.Black;
-                    }
-                }
-            }
-        }
-
-        private void GenerateNewGrid_Click(object sender, RoutedEventArgs e)
-        {
-            // Regenerate the grid with the same dimensions
-            int cols = _grid.Cells.GetLength(0);
-            int rows = _grid.Cells.GetLength(1);
-            _grid = Grid.GetRandomGrid(cols, rows);
-
-            // Refresh the UI
-            UpdateGrid();
-        }
-
-        private void ColorBehaviorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ColorBehaviorComboBox.SelectedItem is ComboBoxItem selectedItem)
-            {
-                if (_grid == null) return;
-
-                var selectedMode = (string)selectedItem.Tag;
-
-                switch (selectedMode)
-                {
-                    case "MajorityColor":
-                        Grid.ColorBehavior = ColorBehaviorMode.MajorityColor;
-                        break;
-
-                    case "AverageColor":
-                        Grid.ColorBehavior = ColorBehaviorMode.AverageColor;
-                        break;
-
-                    case "Default":
-                        Grid.ColorBehavior = ColorBehaviorMode.Default;
-                        break;
-                }
-            }
-            GenerateNewGrid_Click(sender, e);
-        }
-
-        private void TrailCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            _isTrailEnabled = true;
-        }
-
-        private void TrailCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            _isTrailEnabled = false;
-        }
-
-        private void RuleCheckbox_Checked(object sender, RoutedEventArgs e)
-        {
-            if (_updatingCheckboxes) return;
-
-            if (sender is CheckBox checkbox)
-            {
-                if (_grid == null) return;
-
-                int rule = int.Parse(checkbox.Content.ToString());
-                if (checkbox.Name.StartsWith("B"))
-                {
-                    _grid.BirthRules.Add(rule);
-                }
-                else if (checkbox.Name.StartsWith("S"))
-                {
-                    _grid.SurvivalRules.Add(rule);
-                }
-
-                UpdateCurrentRulesetText();
-            }
-        }
-
-        private void RuleCheckbox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (_updatingCheckboxes) return;
-
-            if (sender is CheckBox checkbox)
-            {
-                if (_grid == null) return;
-
-                int rule = int.Parse(checkbox.Content.ToString());
-                if (checkbox.Name.StartsWith("B"))
-                {
-                    _grid.BirthRules.Remove(rule);
-                }
-                else if (checkbox.Name.StartsWith("S"))
-                {
-                    _grid.SurvivalRules.Remove(rule);
-                }
-
-                UpdateCurrentRulesetText();
-            }
-        }
-
-        private void RulesetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (RulesetComboBox.SelectedIndex < 0) return;
-
-            string selectedRulesetName = RulesetComboBox.SelectedItem.ToString();
-            Ruleset selectedRuleset = _rulesetManager.Rulesets.FirstOrDefault(r => r.Name == selectedRulesetName);
-
-            if (selectedRuleset != null)
-            {
-                // Display ruleset description if available
-                RulesetDescriptionText.Text = string.IsNullOrWhiteSpace(selectedRuleset.Description) ?
-                    "No description available." : selectedRuleset.Description;
-
-                // Apply ruleset to grid
-                _rulesetManager.ApplyRuleset(selectedRuleset, _grid);
-
-                // Update checkboxes to reflect ruleset
-                UpdateCheckboxesFromRuleset(selectedRuleset);
-
-                // Update current ruleset display
-                UpdateCurrentRulesetText();
-
-                // Set the name textbox to the selected ruleset name
-                RulesetNameTextBox.Text = selectedRuleset.Name;
-            }
-        }
-
+        /// <summary>
+        /// Updates all rule checkboxes to reflect the given ruleset.
+        /// </summary>
+        /// <param name="ruleset">The ruleset to display</param>
         private void UpdateCheckboxesFromRuleset(Ruleset ruleset)
         {
             _updatingCheckboxes = true;
@@ -446,6 +389,10 @@ namespace MosersGameOfLife
             }
         }
 
+        /// <summary>
+        /// Creates a ruleset object based on the current checkbox states.
+        /// </summary>
+        /// <returns>A ruleset containing the rules from the UI checkboxes</returns>
         private Ruleset GetRulesetFromCheckboxes()
         {
             var birthRules = new HashSet<int>();
@@ -476,6 +423,188 @@ namespace MosersGameOfLife
             return new Ruleset("", birthRules, survivalRules);
         }
 
+        #endregion
+
+        #region Event Handlers
+
+        /// <summary>
+        /// Handles clicks on the Generate New Grid button.
+        /// Creates a new random grid and updates the UI.
+        /// </summary>
+        private void GenerateNewGrid_Click(object sender, RoutedEventArgs e)
+        {
+            // Regenerate the grid with the same dimensions
+            int cols = _grid.Cells.GetLength(0);
+            int rows = _grid.Cells.GetLength(1);
+            _grid = Grid.GetRandomGrid(cols, rows);
+
+            // Refresh the UI
+            UpdateGrid();
+        }
+
+        /// <summary>
+        /// Handles selection changes in the color behavior combo box.
+        /// </summary>
+        private void ColorBehaviorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ColorBehaviorComboBox.SelectedItem is ComboBoxItem selectedItem)
+            {
+                if (_grid == null) return;
+
+                var selectedMode = (string)selectedItem.Tag;
+
+                switch (selectedMode)
+                {
+                    case "MajorityColor":
+                        Grid.ColorBehavior = ColorBehaviorMode.MajorityColor;
+                        break;
+
+                    case "AverageColor":
+                        Grid.ColorBehavior = ColorBehaviorMode.AverageColor;
+                        break;
+
+                    case "Default":
+                        Grid.ColorBehavior = ColorBehaviorMode.Default;
+                        break;
+                }
+            }
+            GenerateNewGrid_Click(sender, e);
+        }
+
+        /// <summary>
+        /// Handles toggling of the trail effect.
+        /// </summary>
+        private void TrailCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            _isTrailEnabled = true;
+        }
+
+        /// <summary>
+        /// Handles disabling of the trail effect.
+        /// </summary>
+        private void TrailCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _isTrailEnabled = false;
+        }
+
+        /// <summary>
+        /// Handles toggling of the paint mode to paint alive cells.
+        /// </summary>
+        private void PaintToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            _paintAliveState = true;
+        }
+
+        /// <summary>
+        /// Handles toggling of the paint mode to paint dead cells.
+        /// </summary>
+        private void PaintToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _paintAliveState = false;
+        }
+
+        /// <summary>
+        /// Handles clicks on the pause/resume button.
+        /// </summary>
+        private void PauseButton_Click(object sender, RoutedEventArgs e)
+        {
+            _isPaused = !_isPaused;
+
+            if (_isPaused)
+            {
+                _timer.Stop();
+                ((Button)sender).Content = "Resume";
+            }
+            else
+            {
+                _timer.Start();
+                ((Button)sender).Content = "Pause";
+            }
+        }
+
+        /// <summary>
+        /// Handles a rule checkbox being checked.
+        /// </summary>
+        private void RuleCheckbox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_updatingCheckboxes) return;
+
+            if (sender is CheckBox checkbox)
+            {
+                if (_grid == null) return;
+
+                int rule = int.Parse(checkbox.Content?.ToString() ?? "0");
+                if (checkbox.Name.StartsWith("B"))
+                {
+                    _grid.BirthRules.Add(rule);
+                }
+                else if (checkbox.Name.StartsWith("S"))
+                {
+                    _grid.SurvivalRules.Add(rule);
+                }
+
+                UpdateCurrentRulesetText();
+            }
+        }
+
+        /// <summary>
+        /// Handles a rule checkbox being unchecked.
+        /// </summary>
+        private void RuleCheckbox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_updatingCheckboxes) return;
+
+            if (sender is CheckBox checkbox)
+            {
+                if (_grid == null) return;
+
+                int rule = int.Parse(checkbox.Content.ToString());
+                if (checkbox.Name.StartsWith("B"))
+                {
+                    _grid.BirthRules.Remove(rule);
+                }
+                else if (checkbox.Name.StartsWith("S"))
+                {
+                    _grid.SurvivalRules.Remove(rule);
+                }
+
+                UpdateCurrentRulesetText();
+            }
+        }
+
+        /// <summary>
+        /// Handles selection changes in the ruleset combo box.
+        /// </summary>
+        private void RulesetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (RulesetComboBox.SelectedIndex < 0) return;
+
+            string? selectedRulesetName = RulesetComboBox.SelectedItem?.ToString();
+            Ruleset? selectedRuleset = _rulesetManager.Rulesets.FirstOrDefault(r => r.Name == selectedRulesetName);
+
+            if (selectedRuleset != null)
+            {
+                // Display ruleset description if available
+                RulesetDescriptionText.Text = string.IsNullOrWhiteSpace(selectedRuleset.Description) ?
+                    "No description available." : selectedRuleset.Description;
+
+                // Apply ruleset to grid
+                _rulesetManager.ApplyRuleset(selectedRuleset, _grid);
+
+                // Update checkboxes to reflect ruleset
+                UpdateCheckboxesFromRuleset(selectedRuleset);
+
+                // Update current ruleset display
+                UpdateCurrentRulesetText();
+
+                // Set the name textbox to the selected ruleset name
+                RulesetNameTextBox.Text = selectedRuleset.Name;
+            }
+        }
+
+        /// <summary>
+        /// Handles clicks on the Save Ruleset button.
+        /// </summary>
         private void SaveRuleset_Click(object sender, RoutedEventArgs e)
         {
             string rulesetName = RulesetNameTextBox.Text?.Trim();
@@ -526,7 +655,7 @@ namespace MosersGameOfLife
                     }
                 }
 
-                // Rest of your existing code
+                // Determine if this is a new ruleset or updating an existing one
                 bool isNewRuleset = !_rulesetManager.Rulesets.Any(r => r.Name == rulesetName);
                 if (isNewRuleset)
                 {
@@ -563,6 +692,9 @@ namespace MosersGameOfLife
             }
         }
 
+        /// <summary>
+        /// Handles clicks on the Delete Ruleset button.
+        /// </summary>
         private void DeleteRuleset_Click(object sender, RoutedEventArgs e)
         {
             string rulesetName = RulesetNameTextBox.Text?.Trim();
@@ -606,5 +738,7 @@ namespace MosersGameOfLife
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        #endregion
     }
 }
