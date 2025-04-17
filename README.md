@@ -1,6 +1,7 @@
 # Moser's Game of Life
 
 ## Overview
+
 A modern implementation of Conway's Game of Life cellular automaton. This project simulates the evolution of a grid of cells based on a set of simple rules, resulting in complex emergent behaviors.
 
 ## Features
@@ -13,7 +14,7 @@ A modern implementation of Conway's Game of Life cellular automaton. This projec
 
 ### Color Behaviors
 - **Default Mode**: Traditional green cells on black background
-- **Majority Color**: Cells adapt the most common color of their neighbors
+- **Majority Color**: Cells adopt the most common color of their neighbors
 - **Average Color**: Cells blend the colors of their neighbors
 
 ### Ruleset Management
@@ -35,25 +36,25 @@ The classic Conway's Game of Life follows these rules:
 
 ## Available Predefined Rulesets
 
-| Name | Notation | Description |
-|------|----------|-------------|
-| Conway's Game of Life | B3/S23 | The classic cellular automaton |
-| HighLife | B36/S23 | Supports replicators |
-| Day & Night | B3678/S34678 | Symmetrical rule |
-| Replicator | B1357/S1357 | Creates replicating patterns |
-| Seeds | B2/S | Fast growth, chaotic |
-| Life without death | B3/S012345678 | Everything lives forever |
-| 2x2 | B36/S245 | Blocks, emulates rule 90 |
-| Assimilation | B345/S5 | Assimilates patterns |
-| Isolated Birth | B1/S012345678 | Give birth when isolated (filling pattern) |
-| Maze | B34/S34 | Tends to form stable mazes |
-| Coagulations | B38/S23 | Forms growing blobs |
-| Diamoeba | B3/S0123456 | Chaotic amoeba-like growth |
-| Anneal | B2/S345678 | Melts patterns together |
-| Long Life | B3/S12345 | Long-living structures |
-| Gnarl | B25/S4 | Tree-like growth |
-| Stains | B357/S1358 | Forms stain-like patterns |
-| Fill | B012345678/S012345678 | Everything fills instantly |
+| Name                   | Notation            | Description                                 | Reference |
+|------------------------|---------------------|---------------------------------------------|-----------|
+| Conway's Game of Life  | B3/S23              | The classic cellular automaton              | [Wikipedia](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) |
+| HighLife               | B36/S23             | Supports replicators                        | [Wikipedia](https://en.wikipedia.org/wiki/Highlife_(cellular_automaton)) |
+| Day & Night            | B3678/S34678        | Symmetrical rule                            | [LifeWiki](https://conwaylife.com/wiki/Day_and_Night) |
+| Replicator             | B1357/S1357         | Creates replicating patterns                | [LifeWiki](https://conwaylife.com/wiki/Replicator) |
+| Seeds                  | B2/S                | Fast growth, chaotic                        | [LifeWiki](https://conwaylife.com/wiki/Seeds) |
+| Life without death     | B3/S012345678       | Everything lives forever                    | [LifeWiki](https://conwaylife.com/wiki/Life_without_Death) |
+| 2x2                    | B36/S245            | Blocks, emulates rule 90                    | [LifeWiki](https://conwaylife.com/wiki/2x2) |
+| Assimilation           | B345/S5             | Assimilates patterns                        | [LifeWiki](https://conwaylife.com/wiki/Assimilation) |
+| Isolated Birth         | B1/S012345678       | Give birth when isolated (filling pattern)  | [LifeWiki](https://conwaylife.com/wiki/Isolated_Birth) |
+| Maze                   | B34/S34             | Tends to form stable mazes                  | [LifeWiki](https://conwaylife.com/wiki/Maze) |
+| Coagulations           | B38/S23             | Forms growing blobs                         | [LifeWiki](https://conwaylife.com/wiki/Coagulations) |
+| Diamoeba               | B3/S0123456         | Chaotic amoeba-like growth                  | [LifeWiki](https://conwaylife.com/wiki/Diamoeba) |
+| Anneal                 | B2/S345678          | Melts patterns together                     | [LifeWiki](https://conwaylife.com/wiki/Anneal) |
+| Long Life              | B3/S12345           | Long-living structures                      | [LifeWiki](https://conwaylife.com/wiki/Long_Life) |
+| Gnarl                  | B25/S4              | Tree-like growth                            | [LifeWiki](https://conwaylife.com/wiki/Gnarl) |
+| Stains                 | B357/S1358          | Forms stain-like patterns                   | [LifeWiki](https://conwaylife.com/wiki/Stains) |
+| Fill                   | B012345678/S012345678 | Everything fills instantly                | [LifeWiki](https://conwaylife.com/wiki/Fill) |
 
 ## Technical Details
 - Built with C# and WPF
