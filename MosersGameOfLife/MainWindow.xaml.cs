@@ -14,11 +14,15 @@ namespace MosersGameOfLife
         private DispatcherTimer _timer;
         private Rectangle[] _rectangles; // 1D array to store UI elements
         private bool _isTrailEnabled;
+        private RulesetManager _rulesetManager;
+        private bool _updatingCheckboxes = false;
 
         public MainWindow()
         {
             InitializeComponent();
+            _rulesetManager = new RulesetManager();
             InitializeGame();
+            InitializeRulesetUI();
         }
 
         private void InitializeGame()
@@ -37,6 +41,30 @@ namespace MosersGameOfLife
             };
             _timer.Tick += (s, e) => UpdateGrid();
             _timer.Start();
+
+            UpdateCurrentRulesetText();
+        }
+
+        private void InitializeRulesetUI()
+        {
+            // Populate the ruleset combobox
+            RulesetComboBox.Items.Clear();
+            foreach (var ruleset in _rulesetManager.Rulesets)
+            {
+                RulesetComboBox.Items.Add(ruleset.Name);
+            }
+
+            // Select Conway's Game of Life by default
+            if (RulesetComboBox.Items.Count > 0)
+            {
+                RulesetComboBox.SelectedIndex = 0;
+            }
+        }
+
+        private void UpdateCurrentRulesetText()
+        {
+            var currentRuleset = _rulesetManager.GetCurrentRuleset(_grid);
+            CurrentRulesetText.Text = $"Current: {currentRuleset.GetNotation()}";
         }
 
         private void InitializeGridUI()
@@ -100,7 +128,7 @@ namespace MosersGameOfLife
                     }
                     else
                     {
-                        // Render dead cells as white
+                        // Render dead cells as black
                         rectangle.Fill = Brushes.Black;
                     }
                 }
@@ -143,6 +171,7 @@ namespace MosersGameOfLife
             }
             GenerateNewGrid_Click(sender, e);
         }
+
         private void TrailCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             _isTrailEnabled = true;
@@ -155,6 +184,8 @@ namespace MosersGameOfLife
 
         private void RuleCheckbox_Checked(object sender, RoutedEventArgs e)
         {
+            if (_updatingCheckboxes) return;
+
             if (sender is CheckBox checkbox)
             {
                 if (_grid == null) return;
@@ -168,11 +199,15 @@ namespace MosersGameOfLife
                 {
                     _grid.SurvivalRules.Add(rule);
                 }
+
+                UpdateCurrentRulesetText();
             }
         }
 
         private void RuleCheckbox_Unchecked(object sender, RoutedEventArgs e)
         {
+            if (_updatingCheckboxes) return;
+
             if (sender is CheckBox checkbox)
             {
                 if (_grid == null) return;
@@ -186,6 +221,198 @@ namespace MosersGameOfLife
                 {
                     _grid.SurvivalRules.Remove(rule);
                 }
+
+                UpdateCurrentRulesetText();
+            }
+        }
+
+        private void RulesetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (RulesetComboBox.SelectedIndex < 0) return;
+
+            string selectedRulesetName = RulesetComboBox.SelectedItem.ToString();
+            Ruleset selectedRuleset = _rulesetManager.Rulesets.FirstOrDefault(r => r.Name == selectedRulesetName);
+
+            if (selectedRuleset != null)
+            {
+                // Display ruleset description if available
+                RulesetDescriptionText.Text = string.IsNullOrWhiteSpace(selectedRuleset.Description) ?
+                    "No description available." : selectedRuleset.Description;
+
+                // Apply ruleset to grid
+                _rulesetManager.ApplyRuleset(selectedRuleset, _grid);
+
+                // Update checkboxes to reflect ruleset
+                UpdateCheckboxesFromRuleset(selectedRuleset);
+
+                // Update current ruleset display
+                UpdateCurrentRulesetText();
+
+                // Set the name textbox to the selected ruleset name
+                RulesetNameTextBox.Text = selectedRuleset.Name;
+            }
+        }
+
+        private void UpdateCheckboxesFromRuleset(Ruleset ruleset)
+        {
+            _updatingCheckboxes = true;
+
+            try
+            {
+                // Update birth rule checkboxes
+                B0.IsChecked = ruleset.BirthRules.Contains(0);
+                B1.IsChecked = ruleset.BirthRules.Contains(1);
+                B2.IsChecked = ruleset.BirthRules.Contains(2);
+                B3.IsChecked = ruleset.BirthRules.Contains(3);
+                B4.IsChecked = ruleset.BirthRules.Contains(4);
+                B5.IsChecked = ruleset.BirthRules.Contains(5);
+                B6.IsChecked = ruleset.BirthRules.Contains(6);
+                B7.IsChecked = ruleset.BirthRules.Contains(7);
+                B8.IsChecked = ruleset.BirthRules.Contains(8);
+
+                // Update survival rule checkboxes
+                S0.IsChecked = ruleset.SurvivalRules.Contains(0);
+                S1.IsChecked = ruleset.SurvivalRules.Contains(1);
+                S2.IsChecked = ruleset.SurvivalRules.Contains(2);
+                S3.IsChecked = ruleset.SurvivalRules.Contains(3);
+                S4.IsChecked = ruleset.SurvivalRules.Contains(4);
+                S5.IsChecked = ruleset.SurvivalRules.Contains(5);
+                S6.IsChecked = ruleset.SurvivalRules.Contains(6);
+                S7.IsChecked = ruleset.SurvivalRules.Contains(7);
+                S8.IsChecked = ruleset.SurvivalRules.Contains(8);
+            }
+            finally
+            {
+                _updatingCheckboxes = false;
+            }
+        }
+
+        private Ruleset GetRulesetFromCheckboxes()
+        {
+            var birthRules = new HashSet<int>();
+            var survivalRules = new HashSet<int>();
+
+            // Get birth rules from checkboxes
+            if (B0.IsChecked == true) birthRules.Add(0);
+            if (B1.IsChecked == true) birthRules.Add(1);
+            if (B2.IsChecked == true) birthRules.Add(2);
+            if (B3.IsChecked == true) birthRules.Add(3);
+            if (B4.IsChecked == true) birthRules.Add(4);
+            if (B5.IsChecked == true) birthRules.Add(5);
+            if (B6.IsChecked == true) birthRules.Add(6);
+            if (B7.IsChecked == true) birthRules.Add(7);
+            if (B8.IsChecked == true) birthRules.Add(8);
+
+            // Get survival rules from checkboxes
+            if (S0.IsChecked == true) survivalRules.Add(0);
+            if (S1.IsChecked == true) survivalRules.Add(1);
+            if (S2.IsChecked == true) survivalRules.Add(2);
+            if (S3.IsChecked == true) survivalRules.Add(3);
+            if (S4.IsChecked == true) survivalRules.Add(4);
+            if (S5.IsChecked == true) survivalRules.Add(5);
+            if (S6.IsChecked == true) survivalRules.Add(6);
+            if (S7.IsChecked == true) survivalRules.Add(7);
+            if (S8.IsChecked == true) survivalRules.Add(8);
+
+            return new Ruleset("", birthRules, survivalRules);
+        }
+
+        private void SaveRuleset_Click(object sender, RoutedEventArgs e)
+        {
+            string rulesetName = RulesetNameTextBox.Text?.Trim();
+
+            if (string.IsNullOrEmpty(rulesetName))
+            {
+                MessageBox.Show("Please enter a name for the ruleset.", "Name Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                // Get current ruleset from checkboxes
+                Ruleset newRuleset = GetRulesetFromCheckboxes();
+                newRuleset.Name = rulesetName;
+
+                // Get a description if this is a new ruleset
+                bool isNewRuleset = !_rulesetManager.Rulesets.Any(r => r.Name == rulesetName);
+                if (isNewRuleset)
+                {
+                    // Optional: You could add a dialog here to get a description
+                    newRuleset.Description = "Custom ruleset";
+                }
+                else
+                {
+                    // Preserve existing description
+                    var existingRuleset = _rulesetManager.Rulesets.FirstOrDefault(r => r.Name == rulesetName);
+                    if (existingRuleset != null)
+                    {
+                        newRuleset.Description = existingRuleset.Description;
+                    }
+                }
+
+                // Save ruleset
+                _rulesetManager.AddRuleset(newRuleset);
+
+                // Refresh ruleset list
+                string currentSelection = rulesetName;
+                InitializeRulesetUI();
+
+                // Select the saved ruleset
+                int index = RulesetComboBox.Items.IndexOf(currentSelection);
+                if (index >= 0)
+                {
+                    RulesetComboBox.SelectedIndex = index;
+                }
+
+                MessageBox.Show($"Ruleset '{rulesetName}' saved successfully.", "Ruleset Saved", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void DeleteRuleset_Click(object sender, RoutedEventArgs e)
+        {
+            string rulesetName = RulesetNameTextBox.Text?.Trim();
+
+            if (string.IsNullOrEmpty(rulesetName))
+            {
+                MessageBox.Show("Please select a ruleset to delete.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                if (_rulesetManager.PredefinedRulesets.Any(r => r.Name == rulesetName))
+                {
+                    MessageBox.Show("Predefined rulesets cannot be deleted.", "Cannot Delete", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                MessageBoxResult result = MessageBox.Show(
+                    $"Are you sure you want to delete ruleset '{rulesetName}'?",
+                    "Confirm Delete",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    _rulesetManager.DeleteRuleset(rulesetName);
+
+                    // Refresh ruleset list and select first item
+                    InitializeRulesetUI();
+                    if (RulesetComboBox.Items.Count > 0)
+                    {
+                        RulesetComboBox.SelectedIndex = 0;
+                    }
+
+                    MessageBox.Show($"Ruleset '{rulesetName}' deleted successfully.", "Ruleset Deleted", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
