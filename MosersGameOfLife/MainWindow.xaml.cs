@@ -14,6 +14,7 @@ namespace MosersGameOfLife
         private Grid _grid;
         private DispatcherTimer _timer;
         private Rectangle[] _rectangles; // 1D array to store UI elements
+        private bool _isTrailEnabled;
 
         public MainWindow()
         {
@@ -88,7 +89,22 @@ namespace MosersGameOfLife
                 {
                     Cell cell = _grid.Cells[i, j];
                     var rectangle = _rectangles[i * rows + j];
-                    rectangle.Fill = new SolidColorBrush(cell.GetColor());
+
+                    if (cell.IsAlive)
+                    {
+                        // Render alive cells
+                        rectangle.Fill = new SolidColorBrush(cell.GetColor());
+                    }
+                    else if (_isTrailEnabled && cell.HasTrail)
+                    {
+                        // Render trail if enabled
+                        rectangle.Fill = new SolidColorBrush(cell.GetColor());
+                    }
+                    else
+                    {
+                        // Render dead cells as white
+                        rectangle.Fill = Brushes.White;
+                    }
                 }
             }
         }
@@ -102,6 +118,41 @@ namespace MosersGameOfLife
 
             // Refresh the UI
             UpdateGrid();
+        }
+
+        private void ColorBehaviorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ColorBehaviorComboBox.SelectedItem is ComboBoxItem selectedItem)
+            {
+                if (_grid == null) return;
+
+                var selectedMode = (string)selectedItem.Tag;
+
+                switch (selectedMode)
+                {
+                    case "MajorityColor":
+                        Grid.ColorBehavior = ColorBehaviorMode.MajorityColor;
+                        break;
+
+                    case "AverageColor":
+                        Grid.ColorBehavior = ColorBehaviorMode.AverageColor;
+                        break;
+
+                    case "BlackAndWhite":
+                        Grid.ColorBehavior = ColorBehaviorMode.BlackAndWhite;
+                        break;
+                }
+            }
+            GenerateNewGrid_Click(sender, e);
+        }
+        private void TrailCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            _isTrailEnabled = true;
+        }
+
+        private void TrailCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _isTrailEnabled = false;
         }
     }
 }
