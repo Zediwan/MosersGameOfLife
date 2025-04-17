@@ -56,6 +56,22 @@ The classic Conway's Game of Life follows these rules:
 | Stains                 | B357/S1358          | Forms stain-like patterns                   | [LifeWiki](https://conwaylife.com/wiki/Stains) |
 | Fill                   | B012345678/S012345678 | Everything fills instantly                | [LifeWiki](https://conwaylife.com/wiki/Fill) |
 
+## Screenshots
+
+The following screenshots showcase key features of Moser's Game of Life:
+
+### Main Interface
+![Main Interface](./assets/images/main-interface.png)
+*The main simulation screen showing the cellular automaton in action*
+
+### Rule Editor
+![Rule Editor](./assets/images/rule-editor.png)
+*Custom rule creation interface with B/S notation*
+
+### Color Behavior Modes
+![Color Modes](./assets/images/color-modes.png)
+*Different color behavior modes in action*
+
 ## Technical Details
 - Built with C# and WPF
 - Uses parallel processing for efficient grid updates
