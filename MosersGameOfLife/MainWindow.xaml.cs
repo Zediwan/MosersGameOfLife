@@ -97,7 +97,7 @@ namespace MosersGameOfLife
         private void InitializeGame()
         {
             // Initialize the grid
-            int cols = 50, rows = 50; // Default grid dimensions
+            int cols = 64, rows = 64; // Default grid dimensions
             _grid = Grid.GetRandomGrid(cols, rows);
 
             // Initialize the UI
