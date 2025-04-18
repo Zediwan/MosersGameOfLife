@@ -4,7 +4,6 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using MosersGameOfLife.Models;
-using MosersGameOfLife.Views;
 using Grid = MosersGameOfLife.Models.Grid;
 
 namespace MosersGameOfLife
@@ -40,7 +39,21 @@ namespace MosersGameOfLife
         private byte _currentPaintG = 255;       // Green component of current paint color
         private byte _currentPaintB = 0;         // Blue component of current paint color
         private Random _random = new Random();   // Random number generator for colors
+        private bool _isSaveEnabled = true;
+        public bool IsSaveEnabled
+        {
+            get => _isSaveEnabled;
+            set
+            {
+                _isSaveEnabled = value;
 
+                // Update the Save button's enabled state
+                if (SaveButton != null)
+                {
+                    SaveButton.IsEnabled = value;
+                }
+            }
+        }
         #endregion
 
         #region Initialization
@@ -57,7 +70,7 @@ namespace MosersGameOfLife
             GenerateDefaultPaintColor();
 
             // Initialize non-nullable fields
-            _grid = new Grid(50, 50); // Default grid dimensions
+            _grid = new Grid(64, 64); // Default grid dimensions
             _timer = new DispatcherTimer();
             _rectangles = Array.Empty<Rectangle>();
             _paintToggleButton = new CheckBox();
@@ -83,7 +96,7 @@ namespace MosersGameOfLife
         private void InitializeGame()
         {
             // Initialize the grid
-            int cols = 50, rows = 50; // Default grid dimensions
+            int cols = 64, rows = 64; // Default grid dimensions
             _grid = Grid.GetRandomGrid(cols, rows);
 
             // Initialize the UI
@@ -529,17 +542,17 @@ namespace MosersGameOfLife
             }
         }
 
-        /// <summary>
-        /// Handles a rule checkbox being checked.
-        /// </summary>
+        private void RulesetNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ValidateRuleset();
+        }
+
         private void RuleCheckbox_Checked(object sender, RoutedEventArgs e)
         {
-            if (_updatingCheckboxes) return;
+            if (_updatingCheckboxes || _grid == null) return; // Add null check for _grid
 
             if (sender is CheckBox checkbox)
             {
-                if (_grid == null) return;
-
                 int rule = int.Parse(checkbox.Content?.ToString() ?? "0");
                 if (checkbox.Name.StartsWith("B"))
                 {
@@ -551,20 +564,16 @@ namespace MosersGameOfLife
                 }
 
                 UpdateCurrentRulesetText();
+                ValidateRuleset(); // Validate after updating rules
             }
         }
 
-        /// <summary>
-        /// Handles a rule checkbox being unchecked.
-        /// </summary>
         private void RuleCheckbox_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (_updatingCheckboxes) return;
+            if (_updatingCheckboxes || _grid == null) return; // Add null check for _grid
 
             if (sender is CheckBox checkbox)
             {
-                if (_grid == null) return;
-
                 int rule = int.Parse(checkbox.Content?.ToString() ?? "0");
                 if (checkbox.Name.StartsWith("B"))
                 {
@@ -576,8 +585,10 @@ namespace MosersGameOfLife
                 }
 
                 UpdateCurrentRulesetText();
+                ValidateRuleset(); // Validate after updating rules
             }
         }
+
 
         /// <summary>
         /// Handles selection changes in the ruleset combo box.
@@ -606,6 +617,9 @@ namespace MosersGameOfLife
 
                 // Set the name textbox to the selected ruleset name
                 RulesetNameTextBox.Text = selectedRuleset.Name;
+
+                // Update the delete button state
+                UpdateDeleteButtonState();
             }
         }
 
@@ -618,50 +632,36 @@ namespace MosersGameOfLife
 
             if (string.IsNullOrEmpty(rulesetName))
             {
-                MessageBox.Show("Please enter a name for the ruleset.", "Name Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                SaveInfoText.Text = "Please enter a name for the ruleset.";
+                SaveInfoText.Visibility = Visibility.Visible;
+                IsSaveEnabled = false;
                 return;
             }
 
+            // Get current ruleset from checkboxes
+            Ruleset newRuleset = GetRulesetFromCheckboxes();
+            newRuleset.Name = rulesetName;
+
+            // Check for duplicate ruleset
+            var existingRuleset = _rulesetManager.Rulesets.FirstOrDefault(r =>
+                r.Name != rulesetName &&
+                r.BirthRules.SetEquals(newRuleset.BirthRules) &&
+                r.SurvivalRules.SetEquals(newRuleset.SurvivalRules));
+
+            if (existingRuleset != null)
+            {
+                SaveInfoText.Text = $"A ruleset with the same rules already exists: {existingRuleset.Name}.";
+                SaveInfoText.Visibility = Visibility.Visible;
+                IsSaveEnabled = false;
+                return;
+            }
+
+            // If validation passes, enable the Save button and hide the info text
+            SaveInfoText.Visibility = Visibility.Collapsed;
+            IsSaveEnabled = true;
+
             try
             {
-                // Get current ruleset from checkboxes
-                Ruleset newRuleset = GetRulesetFromCheckboxes();
-                newRuleset.Name = rulesetName;
-
-                // Try to find if a ruleset with these exact rules already exists but has a different name
-                var existingRuleset = _rulesetManager.Rulesets.FirstOrDefault(r =>
-                    r.Name != rulesetName &&
-                    r.BirthRules.SetEquals(newRuleset.BirthRules) &&
-                    r.SurvivalRules.SetEquals(newRuleset.SurvivalRules));
-
-                if (existingRuleset != null)
-                {
-                    // A ruleset with the same rules but different name exists
-                    var dialog = new DuplicateRulesetDialog(existingRuleset.Name, existingRuleset.GetNotation());
-                    dialog.Owner = this;
-                    dialog.ShowDialog();
-
-                    switch (dialog.Result)
-                    {
-                        case DuplicateRulesetDialog.DialogResult.UseExisting:
-                            // Select the existing ruleset
-                            int index = RulesetComboBox.Items.IndexOf(existingRuleset.Name);
-                            if (index >= 0)
-                            {
-                                RulesetComboBox.SelectedIndex = index;
-                            }
-                            return;
-
-                        case DuplicateRulesetDialog.DialogResult.Cancel:
-                            // User cancelled, don't save anything
-                            return;
-
-                        case DuplicateRulesetDialog.DialogResult.CreateDuplicate:
-                            // Continue below to create a duplicate
-                            break;
-                    }
-                }
-
                 // Determine if this is a new ruleset or updating an existing one
                 bool isNewRuleset = !_rulesetManager.Rulesets.Any(r => r.Name == rulesetName);
                 if (isNewRuleset)
@@ -691,11 +691,15 @@ namespace MosersGameOfLife
                     RulesetComboBox.SelectedIndex = savedIndex;
                 }
 
-                MessageBox.Show($"Ruleset '{rulesetName}' saved successfully.", "Ruleset Saved", MessageBoxButton.OK, MessageBoxImage.Information);
+                SaveInfoText.Text = $"Ruleset '{rulesetName}' saved successfully.";
+                SaveInfoText.Foreground = Brushes.Green;
+                SaveInfoText.Visibility = Visibility.Visible;
             }
             catch (InvalidOperationException ex)
             {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                SaveInfoText.Text = ex.Message;
+                SaveInfoText.Foreground = Brushes.Red;
+                SaveInfoText.Visibility = Visibility.Visible;
             }
         }
 
@@ -745,6 +749,76 @@ namespace MosersGameOfLife
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void ResetRuleset_Click(object sender, RoutedEventArgs e)
+        {
+            if (RulesetComboBox.SelectedItem is string selectedRulesetName)
+            {
+                // Find the selected ruleset
+                var selectedRuleset = _rulesetManager.Rulesets
+                    .FirstOrDefault(r => r.Name == selectedRulesetName);
+
+                if (selectedRuleset != null)
+                {
+                    // Update the checkboxes to reflect the selected ruleset
+                    UpdateCheckboxesFromRuleset(selectedRuleset);
+
+                    // Update the grid's ruleset
+                    _rulesetManager.ApplyRuleset(selectedRuleset, _grid);
+
+                    // Update the Current Ruleset text
+                    UpdateCurrentRulesetText();
+                }
+                else
+                {
+                    MessageBox.Show("No ruleset selected or ruleset not found.",
+                                    "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+        private void ValidateRuleset()
+        {
+            string? rulesetName = RulesetNameTextBox.Text?.Trim();
+
+            if (string.IsNullOrEmpty(rulesetName))
+            {
+                SaveInfoText.Text = "Please enter a name for the ruleset.";
+                SaveInfoText.Visibility = Visibility.Visible;
+                IsSaveEnabled = false;
+                return;
+            }
+
+            // Get current ruleset from checkboxes
+            Ruleset newRuleset = GetRulesetFromCheckboxes();
+            newRuleset.Name = rulesetName;
+
+            // Check for duplicate ruleset
+            var existingRuleset = _rulesetManager.Rulesets.FirstOrDefault(r =>
+                r.Name != rulesetName &&
+                r.BirthRules.SetEquals(newRuleset.BirthRules) &&
+                r.SurvivalRules.SetEquals(newRuleset.SurvivalRules));
+
+            if (existingRuleset != null)
+            {
+                SaveInfoText.Text = $"A ruleset with the same rules already exists: {existingRuleset.Name}.";
+                SaveInfoText.Visibility = Visibility.Visible;
+                IsSaveEnabled = false;
+                return;
+            }
+
+            // If validation passes, enable the Save button and hide the info text
+            SaveInfoText.Visibility = Visibility.Collapsed;
+            IsSaveEnabled = true;
+        }
+        private void UpdateDeleteButtonState()
+        {
+            if (RulesetComboBox.SelectedItem is string selectedRulesetName)
+            {
+                var isPredefined = _rulesetManager.PredefinedRulesets.Any(r => r.Name == selectedRulesetName);
+                DeleteButton.IsEnabled = !isPredefined;
+            }
+        }
+
         #endregion
     }
 }
