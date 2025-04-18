@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using MosersGameOfLife.Models;
@@ -24,7 +25,6 @@ namespace MosersGameOfLife
         private bool _isPaused = false;          // Tracks simulation pause state
 
         // Ruleset Management
-        private RulesetManager _rulesetManager;  // Handles ruleset storage and retrieval
         private bool _updatingCheckboxes = false; // Flag to prevent recursive checkbox events
 
         // Display and Rendering Options
@@ -41,6 +41,9 @@ namespace MosersGameOfLife
         private byte _currentPaintB = 0;         // Blue component of current paint color
         private Random _random = new Random();   // Random number generator for colors
 
+        public const int cols = 128, rows = 128; // Default grid dimensions
+        private Color defaultPaintColor = Colors.Green; // Default color of user painted cells
+
         #endregion
 
         #region Initialization
@@ -51,13 +54,9 @@ namespace MosersGameOfLife
         public MainWindow()
         {
             InitializeComponent();
-            _rulesetManager = new RulesetManager();
-
-            // Initialize the first paint color
-            GenerateDefaultPaintColor();
 
             // Initialize non-nullable fields
-            _grid = new Grid(50, 50); // Default grid dimensions
+            _grid = new Grid(cols, rows); // Default grid dimensions
             _timer = new DispatcherTimer();
             _rectangles = Array.Empty<Rectangle>();
             _paintToggleButton = new CheckBox();
@@ -67,24 +66,14 @@ namespace MosersGameOfLife
         }
 
         /// <summary>
-        /// Generates a consistent default color for painting cells.
-        /// </summary>
-        private void GenerateDefaultPaintColor()
-        {
-            // Set a consistent default color (e.g., green)
-            _currentPaintR = 0;
-            _currentPaintG = 255;
-            _currentPaintB = 0;
-        }
-
-        /// <summary>
         /// Initializes the simulation grid and timer.
         /// </summary>
         private void InitializeGame()
         {
             // Initialize the grid
-            int cols = 50, rows = 50; // Default grid dimensions
-            _grid = Grid.GetRandomGrid(cols, rows);
+            WriteableBitmap bitmap = new WriteableBitmap(cols, rows, 96, 96, PixelFormats.Bgra32, null);
+            LifeImage.Source = bitmap;
+            byte[] pixelBuffer = new byte[cols * rows * 4];
 
             // Initialize the UI
             InitializeGridUI();
@@ -107,7 +96,7 @@ namespace MosersGameOfLife
         {
             // Populate the ruleset combobox
             RulesetComboBox.Items.Clear();
-            foreach (var ruleset in _rulesetManager.Rulesets)
+            foreach (var ruleset in RulesetManager.Rulesets)
             {
                 RulesetComboBox.Items.Add(ruleset.Name);
             }
@@ -216,7 +205,7 @@ namespace MosersGameOfLife
         /// </summary>
         private void UpdateCurrentRulesetText()
         {
-            var currentRuleset = _rulesetManager.GetCurrentRuleset(_grid);
+            var currentRuleset = RulesetManager.GetCurrentRuleset(_grid);
             CurrentRulesetText.Text = $"Current: {currentRuleset.GetNotation()}";
         }
 
@@ -587,7 +576,7 @@ namespace MosersGameOfLife
             if (RulesetComboBox.SelectedIndex < 0) return;
 
             string? selectedRulesetName = RulesetComboBox.SelectedItem?.ToString();
-            Ruleset? selectedRuleset = _rulesetManager.Rulesets.FirstOrDefault(r => r.Name == selectedRulesetName);
+            Ruleset? selectedRuleset = RulesetManager.Rulesets.FirstOrDefault(r => r.Name == selectedRulesetName);
 
             if (selectedRuleset != null)
             {
@@ -596,7 +585,7 @@ namespace MosersGameOfLife
                     "No description available." : selectedRuleset.Description;
 
                 // Apply ruleset to grid
-                _rulesetManager.ApplyRuleset(selectedRuleset, _grid);
+                RulesetManager.ApplyRuleset(selectedRuleset, _grid);
 
                 // Update checkboxes to reflect ruleset
                 UpdateCheckboxesFromRuleset(selectedRuleset);
@@ -629,7 +618,7 @@ namespace MosersGameOfLife
                 newRuleset.Name = rulesetName;
 
                 // Try to find if a ruleset with these exact rules already exists but has a different name
-                var existingRuleset = _rulesetManager.Rulesets.FirstOrDefault(r =>
+                var existingRuleset = RulesetManager.Rulesets.FirstOrDefault(r =>
                     r.Name != rulesetName &&
                     r.BirthRules.SetEquals(newRuleset.BirthRules) &&
                     r.SurvivalRules.SetEquals(newRuleset.SurvivalRules));
@@ -663,14 +652,14 @@ namespace MosersGameOfLife
                 }
 
                 // Determine if this is a new ruleset or updating an existing one
-                bool isNewRuleset = !_rulesetManager.Rulesets.Any(r => r.Name == rulesetName);
+                bool isNewRuleset = !RulesetManager.Rulesets.Any(r => r.Name == rulesetName);
                 if (isNewRuleset)
                 {
                     newRuleset.Description = "Custom ruleset";
                 }
                 else
                 {
-                    var existingNameRuleset = _rulesetManager.Rulesets.FirstOrDefault(r => r.Name == rulesetName);
+                    var existingNameRuleset = RulesetManager.Rulesets.FirstOrDefault(r => r.Name == rulesetName);
                     if (existingNameRuleset != null)
                     {
                         newRuleset.Description = existingNameRuleset.Description;
@@ -678,7 +667,7 @@ namespace MosersGameOfLife
                 }
 
                 // Save ruleset
-                _rulesetManager.AddRuleset(newRuleset);
+                RulesetManager.AddRuleset(newRuleset);
 
                 // Refresh ruleset list
                 string currentSelection = rulesetName;
@@ -714,7 +703,7 @@ namespace MosersGameOfLife
 
             try
             {
-                if (_rulesetManager.PredefinedRulesets.Any(r => r.Name == rulesetName))
+                if (RulesetManager.PredefinedRulesets.Any(r => r.Name == rulesetName))
                 {
                     MessageBox.Show("Predefined rulesets cannot be deleted.", "Cannot Delete", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
@@ -728,7 +717,7 @@ namespace MosersGameOfLife
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    _rulesetManager.DeleteRuleset(rulesetName);
+                    RulesetManager.DeleteRuleset(rulesetName);
 
                     // Refresh ruleset list and select first item
                     InitializeRulesetUI();

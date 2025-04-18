@@ -3,10 +3,16 @@
        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
        Title="Moser's Game of Life" Height="600" Width="800">
    <Grid>
-       <!-- Main Grid Display -->
-       <UniformGrid x:Name="GridDisplay" Background="Black" />
+        <!-- This will render the simulation using a WriteableBitmap -->
+        <Image x:Name="LifeImage"
+               Stretch="None"
+               SnapsToDevicePixels="True"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               RenderOptions.BitmapScalingMode="NearestNeighbor"
+               />
 
-       <!-- Transparent Settings Panel -->
+        <!-- Transparent Settings Panel -->
        <StackPanel Orientation="Vertical" Background="#AAAAAAAA" 
                    HorizontalAlignment="Right" VerticalAlignment="Top" 
                    Margin="10" Width="250">
