@@ -36,13 +36,28 @@ namespace MosersGameOfLife
         private CheckBox _paintToggleButton;     // Reference to paint toggle UI element
 
         // Painting Color Management
+        private Random _random = new Random();   // Random number generator for colors
         private byte _currentPaintR = 0;         // Red component of current paint color
         private byte _currentPaintG = 255;       // Green component of current paint color
         private byte _currentPaintB = 0;         // Blue component of current paint color
-        private Random _random = new Random();   // Random number generator for colors
-
-        public const int cols = 128, rows = 128; // Default grid dimensions
         private Color defaultPaintColor = Colors.Green; // Default color of user painted cells
+
+        private WriteableBitmap _bitmap;
+        private byte[] _pixelBuffer;
+        private int _cols;
+        public int Cols
+        {
+            get => _cols;
+            set => _cols = Math.Max(value, (int)(SystemParameters.PrimaryScreenWidth / 8));
+        }
+        private int _rows;
+        public int Rows
+        {
+            get => _rows;
+            set => _rows = Math.Max(value, (int)(SystemParameters.PrimaryScreenHeight / 8));
+        }
+        private int _stride; // bytes per row
+
 
         #endregion
 
@@ -56,37 +71,27 @@ namespace MosersGameOfLife
             InitializeComponent();
 
             // Initialize non-nullable fields
-            _grid = new Grid(cols, rows); // Default grid dimensions
-            _timer = new DispatcherTimer();
-            _rectangles = Array.Empty<Rectangle>();
-            _paintToggleButton = new CheckBox();
+            Rows = 160;
+            Cols = 160;
+            _grid = Grid.GetRandomGrid(_cols, _rows);
 
-            InitializeGame();
-            InitializeRulesetUI();
-        }
+            _stride = _cols * 4; // 4 bytes per pixel (BGRA)
+            _pixelBuffer = new byte[_cols * _rows * 4];
 
-        /// <summary>
-        /// Initializes the simulation grid and timer.
-        /// </summary>
-        private void InitializeGame()
-        {
-            // Initialize the grid
-            WriteableBitmap bitmap = new WriteableBitmap(cols, rows, 96, 96, PixelFormats.Bgra32, null);
-            LifeImage.Source = bitmap;
-            byte[] pixelBuffer = new byte[cols * rows * 4];
+            _bitmap = new WriteableBitmap(_cols, _rows, 96, 96, PixelFormats.Bgra32, null);
+            LifeImage.Source = _bitmap;
 
-            // Initialize the UI
-            InitializeGridUI();
-
-            // Set up the timer for simulation updates
             _timer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(100) // Default update speed
+                Interval = TimeSpan.FromMilliseconds(1) // Default update speed
             };
             _timer.Tick += (s, e) => UpdateGrid();
             _timer.Start();
 
+            _paintToggleButton = new CheckBox();
+
             UpdateCurrentRulesetText();
+            InitializeRulesetUI();
         }
 
         /// <summary>
@@ -108,96 +113,40 @@ namespace MosersGameOfLife
             }
         }
 
-        /// <summary>
-        /// Initializes the visual grid UI and sets up mouse event handling.
-        /// </summary>
-        private void InitializeGridUI()
-        {
-            int cols = _grid.Cells.GetLength(0);
-            int rows = _grid.Cells.GetLength(1);
-
-            // Initialize the _rectangles array
-            _rectangles = new Rectangle[cols * rows];
-
-            // Clear the UI and set up a uniform grid
-            GridDisplay.Children.Clear();
-            GridDisplay.Rows = rows;
-            GridDisplay.Columns = cols;
-
-            for (int i = 0; i < cols; i++)
-            {
-                for (int j = 0; j < rows; j++)
-                {
-                    // Create a new rectangle for each cell
-                    var rectangle = new Rectangle
-                    {
-                        Width = double.NaN, // Size determined by UniformGrid
-                        Height = double.NaN,
-                        Fill = Brushes.Black, // Default color
-                        StrokeThickness = 0.5,
-                        Tag = new Point(i, j) // Store the cell coordinates in the Tag property
-                    };
-
-                    // Add the event handlers for mouse interaction
-                    rectangle.MouseDown += Rectangle_MouseDown;
-                    rectangle.MouseEnter += Rectangle_MouseEnter;
-                    rectangle.MouseUp += Rectangle_MouseUp;
-
-                    // Add the rectangle to the UI and the array
-                    GridDisplay.Children.Add(rectangle);
-                    _rectangles[i * rows + j] = rectangle;
-                }
-            }
-
-            // Add mouse event handlers to the grid display
-            GridDisplay.MouseDown += GridDisplay_MouseDown;
-            GridDisplay.MouseUp += GridDisplay_MouseUp;
-            GridDisplay.MouseLeave += GridDisplay_MouseLeave;
-        }
-
         #endregion
 
         #region Grid Updates and Rendering
 
         /// <summary>
-        /// Updates the grid state and renders the changes to the UI.
-        /// Called periodically by the timer to advance the simulation.
+        /// Updates the grid and refreshes the display.
         /// </summary>
         private void UpdateGrid()
         {
             if (_isPaused) return;
 
-            // Update the grid state
             _grid.Update();
 
-            // Update the UI without rebuilding it
-            int cols = _grid.Cells.GetLength(0);
-            int rows = _grid.Cells.GetLength(1);
-
-            for (int i = 0; i < cols; i++)
+            int index = 0;
+            for (int y = 0; y < _rows; y++)
             {
-                for (int j = 0; j < rows; j++)
+                for (int x = 0; x < _cols; x++)
                 {
-                    Cell cell = _grid.Cells[i, j];
-                    var rectangle = _rectangles[i * rows + j];
+                    var cell = _grid.Cells[x, y];
 
-                    if (cell.IsAlive)
-                    {
-                        // Render alive cells
-                        rectangle.Fill = new SolidColorBrush(cell.GetColor());
-                    }
-                    else if (_isTrailEnabled && cell.HasTrail)
-                    {
-                        // Render trail if enabled
-                        rectangle.Fill = new SolidColorBrush(cell.GetColor());
-                    }
-                    else
-                    {
-                        // Render dead cells as black
-                        rectangle.Fill = Brushes.Black;
-                    }
+                    byte r = cell.R;
+                    byte g = cell.G;
+                    byte b = cell.B;
+                    // Set alpha based on cell state and trail
+                    byte a = cell.IsAlive ? (byte)255 : (_isTrailEnabled && cell.HasTrail ? cell.A : (byte)0);
+
+                    _pixelBuffer[index++] = b;
+                    _pixelBuffer[index++] = g;
+                    _pixelBuffer[index++] = r;
+                    _pixelBuffer[index++] = a;
                 }
             }
+
+            _bitmap.WritePixels(new Int32Rect(0, 0, _cols, _rows), _pixelBuffer, _stride, 0);
         }
 
         /// <summary>

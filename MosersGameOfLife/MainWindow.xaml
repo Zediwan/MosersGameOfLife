@@ -3,14 +3,12 @@
        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
        Title="Moser's Game of Life" Height="600" Width="800">
    <Grid Background="Black">
-        <!-- This will render the simulation using a WriteableBitmap -->
         <Image x:Name="LifeImage"
-               Stretch="None"
+               Stretch="Fill"
                SnapsToDevicePixels="True"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center"
-               RenderOptions.BitmapScalingMode="NearestNeighbor"
-               />
+               RenderOptions.BitmapScalingMode="NearestNeighbor">
+            <!-- Remove the fixed ScaleTransform -->
+        </Image>
 
         <!-- Transparent Settings Panel -->
        <StackPanel Orientation="Vertical" Background="#AAAAAAAA" 
